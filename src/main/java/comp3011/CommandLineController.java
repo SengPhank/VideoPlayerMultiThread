@@ -4,7 +4,7 @@
  * 
  * Authors:
  *   1. Simon Ratcliffe, in collaboration with GPT-5.6 Terra
- *   2. <student name and student number insert here upon modification>
+ *   2. Sengphachanh Phank. a1967663
  *
  * Copyright 2026 Simon Ratcliffe
  */
@@ -13,7 +13,9 @@ package comp3011;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.function.Supplier;
+import java.util.Map;
+import java.util.HashMap;
 /**
  * Created in the VideoPlayerApp's main function to receive and parse the video player's command-line arguments.
  *
@@ -32,7 +34,45 @@ public class CommandLineController {
     private Integer displayId;
     private File videoFile;
     private String errorMessage;
+    
+    // FrameProcessor data
+    private record ProcessorOption(char shortFlag, String longFlag, String description, Supplier<FrameProcessor> factory) {}
 
+    private static final List<ProcessorOption> PROCESSOR_OPTIONS = List.of(
+	    new ProcessorOption('n', "number-frames", "Render the frame number onto each frame", FrameNumberer::new),
+	    new ProcessorOption('s', "scratch-frames", "Render vertical film scratches", FrameScratcher::new),
+	    new ProcessorOption('f', "flicker-frames", "Randomly dim frames", FrameFlickerer::new),
+	    new ProcessorOption('w', "black-and-white", "Convert frames to black and white", FrameBlackAndWhiter::new),
+	    new ProcessorOption('y', "yellow-frames", "Apply a warmer colour temperature", FrameYellower::new),
+	    new ProcessorOption('v', "vignette-frames", "Darken the frame edges", FrameVignetter::new),
+	    new ProcessorOption('d', "dust-frames", "Render dust and hair marks", FrameDuster::new),
+	    new ProcessorOption('j', "jitter-frames", "Randomly displace frames by a few pixels", FrameJitterer::new),
+	    new ProcessorOption('m', "mottle-frames", "Add cloudy emulsion mottling", FrameMottler::new),
+	    new ProcessorOption('b', "bleed-frames", "Bleed light into frames", FrameBleeder::new),
+	    new ProcessorOption('p', "pepper-frames", "Pepper frames with dark spots/blotches", FramePepperer::new)
+	);
+    		
+    // Fast lookup tables
+    private static final Map<Character, ProcessorOption> shortFlagLookup = new HashMap<>();
+    private static final Map<String, ProcessorOption> longFlagLookup = new HashMap<>();
+    
+    // Formatting print statements
+    private static int longestFlagSize = 0;
+   
+    
+    // Initialise Table and other variables at run time
+    static {
+    	for (ProcessorOption option : PROCESSOR_OPTIONS) {
+            shortFlagLookup.put(option.shortFlag(), option);
+            longFlagLookup.put(option.longFlag(), option);
+            longestFlagSize = Math.max(longestFlagSize, option.longFlag().length());
+        }
+    }
+    
+    // Final filters request
+    private final List<FrameProcessor> frameProcessors = new ArrayList<>();
+    
+    // Constructor ===
     public CommandLineController(String[] args) {
         this.args = args.clone();
         parse();
@@ -43,7 +83,8 @@ public class CommandLineController {
             printHelp();
         }
     }
-
+    
+    // Methods ===    
     public File getVideoFile() {
         return videoFile;
     }
@@ -74,19 +115,12 @@ public class CommandLineController {
 
     private void parse() {
         List<String> videoFiles = new ArrayList<>();
+        
         for (String arg : args) {
-            if ("-h".equals(arg) || "--help".equals(arg)) {
-                helpRequested = true;
-            } else if ("-a".equals(arg) || "--audio".equals(arg)) {
-                audioRequested = true;
-            } else if ("-x".equals(arg) || "--maximise".equals(arg)) {
-                maximiseRequested = true;
-            } else if ("-1".equals(arg) || "--monitor-1".equals(arg)) {
-                setDisplayId(1);
-            } else if ("-2".equals(arg) || "--monitor-2".equals(arg)) {
-                setDisplayId(2);
+            if (arg.startsWith("--")) {
+                parseLongOption(arg);
             } else if (arg.startsWith("-")) {
-                errorMessage = "Unknown option: " + arg;
+                parseShortOptions(arg);
             } else {
                 videoFiles.add(arg);
             }
@@ -105,8 +139,50 @@ public class CommandLineController {
                 errorMessage = "No video file specified.";
             }
         }
+        
+        // print test
+        if (errorMessage == null) {
+        	System.out.println("Valid frame processors: " + frameProcessors.size());
+        }
     }
-
+    
+    private void parseShortOptions(String arg) {
+    	// Edge case
+    	if (arg.length() == 1) { errorMessage = "Unknown option: " + arg; return; }
+    	
+    	for (char flag : arg.substring(1).toCharArray()) {
+    		switch (flag) {
+    			case 'h' -> helpRequested = true;
+    			case 'a' -> audioRequested = true;
+    			case 'x' -> maximiseRequested = true;
+    			case '1' -> setDisplayId(1);
+    			case '2' -> setDisplayId(2);
+    			default -> addProcessor(shortFlagLookup.get(flag), arg);
+    		}
+    	}
+    	
+    }
+        
+    private void parseLongOption(String arg) {
+    	// Edge case
+    	if (arg.length() == 2) { errorMessage = "Unknown option: " + arg; return; }
+    	String flag = arg.substring(2);
+    	
+		switch (flag) {
+			case "help" -> helpRequested = true;
+			case "audio" -> audioRequested = true;
+			case "maximise" -> maximiseRequested = true;
+			case "monitor-1" -> setDisplayId(1);
+			case "monitor-2" -> setDisplayId(2);
+			default -> addProcessor(longFlagLookup.get(flag), arg);
+		}
+    	
+    }
+    
+    private void addProcessor(ProcessorOption option, String token) {
+        if (option == null) { errorMessage = "Unknown option: " + token; return; }
+        frameProcessors.add(option.factory().get());
+    }
     private void setDisplayId(int displayId) {
         if (this.displayId != null && this.displayId != displayId) {
             errorMessage = "Only one display option can be used";
@@ -124,5 +200,24 @@ public class CommandLineController {
         System.out.println("  -x, --maximise     Open the player maximised");
         System.out.println("  -1, --monitor-1    Open the player on display 1");
         System.out.println("  -2, --monitor-2    Open the player on display 2");
+        
+        
+        // Print frame processor. Has a nice formatted output, where description all starts on the same column.
+        System.out.println("\nFrame processors:");
+        for (ProcessorOption opt : PROCESSOR_OPTIONS) {
+        	int whiteSpaces = longestFlagSize - opt.longFlag().length() + 2;
+        	System.out.print("  -" + opt.shortFlag() + ", --" + opt.longFlag());
+        	while (whiteSpaces > 0) { System.out.print(' '); whiteSpaces -= 1; }
+        	System.out.println(opt.description());
+        }
+        
+        System.out.println("\nFrame processors are applied in command-line order and may be repeated.");
+        System.out.println("Example: -nssnfwyvdjmbp numbers, scratches twice, numbers again, flickers,");
+        System.out.println("converts, warms, vignettes, dusts, jitters, mottles, bleeds, then peppers.");
+    }
+    
+    // Return filter request
+    public List<FrameProcessor> getFrameProcessors() {
+    	return List.copyOf(frameProcessors);
     }
 }
