@@ -12,7 +12,6 @@ package comp3011;
 
 import java.io.File;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.function.BiConsumer;
@@ -91,6 +90,7 @@ public class VideoPlayerModel {
 
     public VideoPlayerModel(
             boolean audioEnabled,
+            List<FrameProcessor> frameProcessors,
             BiConsumer<Integer, Integer> videoSizeChangedHandler,
             Consumer<Image> frameReadyHandler,
             Consumer<String> statusChangedHandler,
@@ -102,18 +102,18 @@ public class VideoPlayerModel {
         this.statusChangedHandler = statusChangedHandler;
         this.playbackStateChangedHandler = playbackStateChangedHandler;
         this.audioOutputStateChangedHandler = audioOutputStateChangedHandler;
-        this.frameProcessors = new ArrayList<>();
+        this.frameProcessors = List.copyOf(frameProcessors);
         
-        frameProcessors.add(new FrameBleeder());
-        frameProcessors.add(new FrameScratcher());
-        frameProcessors.add(new FrameDuster());
-        frameProcessors.add(new FramePepperer());
-        frameProcessors.add(new FrameBlackAndWhiter());
-        frameProcessors.add(new FrameYellower());
-        frameProcessors.add(new FrameVignetter());
-        frameProcessors.add(new FrameFlickerer());
-        frameProcessors.add(new FrameJitterer());
-        frameProcessors.add(new FrameNumberer());
+//        frameProcessors.add(new FrameBleeder());
+//        frameProcessors.add(new FrameScratcher());
+//        frameProcessors.add(new FrameDuster());
+//        frameProcessors.add(new FramePepperer());
+//        frameProcessors.add(new FrameBlackAndWhiter());
+//        frameProcessors.add(new FrameYellower());
+//        frameProcessors.add(new FrameVignetter());
+//        frameProcessors.add(new FrameFlickerer());
+//        frameProcessors.add(new FrameJitterer());
+//        frameProcessors.add(new FrameNumberer());
     }
 
     public void play(File file) {
