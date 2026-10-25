@@ -79,6 +79,7 @@ public class CommandLineController {
         if (errorMessage != null) {
             System.out.println(errorMessage);
         }
+        
         if (helpRequested) {
             printHelp();
         }
@@ -127,28 +128,28 @@ public class CommandLineController {
         }
 
         if (videoFiles.size() > 1) {
-            errorMessage = "Usage: VideoPlayer [options] [video-file]";
+        	setError("Usage: VideoPlayer [options] [video-file]");
         } else if (videoFiles.size() == 1) {
             videoFile = new File(videoFiles.get(0));
             if (!videoFile.isFile()) {
-                errorMessage = "File not found: " + videoFile.getPath();
+            	setError("File not found: " + videoFile.getPath());
                 videoFile = null;
             }
         } else {
             if (!helpRequested) {
-                errorMessage = "No video file specified.";
+            	setError("No video file specified.");
             }
         }
         
         // print test
-        if (errorMessage == null) {
-        	System.out.println("Valid frame processors: " + frameProcessors.size());
-        }
+//        if (errorMessage == null) {
+//        	System.out.println("Valid frame processors: " + frameProcessors.size());
+//        }
     }
     
     private void parseShortOptions(String arg) {
     	// Edge case
-    	if (arg.length() == 1) { errorMessage = "Unknown option: " + arg; return; }
+    	if (arg.length() == 1) { setError("Unknown option: " + arg); return; }
     	
     	for (char flag : arg.substring(1).toCharArray()) {
     		switch (flag) {
@@ -165,7 +166,7 @@ public class CommandLineController {
         
     private void parseLongOption(String arg) {
     	// Edge case
-    	if (arg.length() == 2) { errorMessage = "Unknown option: " + arg; return; }
+    	if (arg.length() == 2) { setError("Unknown option: " + arg); return; }
     	String flag = arg.substring(2);
     	
 		switch (flag) {
@@ -180,12 +181,12 @@ public class CommandLineController {
     }
     
     private void addProcessor(ProcessorOption option, String token) {
-        if (option == null) { errorMessage = "Unknown option: " + token; return; }
+        if (option == null) { setError("Unknown option: " + token); return; }
         frameProcessors.add(option.factory().get());
     }
     private void setDisplayId(int displayId) {
         if (this.displayId != null && this.displayId != displayId) {
-            errorMessage = "Only one display option can be used";
+        	setError("Only one display option can be used");
             return;
         }
         this.displayId = displayId;
@@ -219,5 +220,10 @@ public class CommandLineController {
     // Return filter request
     public List<FrameProcessor> getFrameProcessors() {
     	return List.copyOf(frameProcessors);
+    }
+    
+    // Change the error message to first-found error
+    private void setError(String msg) {
+    	if (errorMessage == null) { errorMessage = msg; }
     }
 }
