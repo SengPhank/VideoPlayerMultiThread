@@ -5,7 +5,7 @@ We use quantitative methods to measure the headroom trace under increasing Frame
 
 ## Experiment procedure
 - This stress test will expand to 3 unique runs with (5, 6, 7) filters. Each will have 24 seconds to test.
-- The Vignetter frame processor is used as a controll FrameProcessor, as other processors like `numberer` or `dusterer` are too light-weight.
+- The Vignetter frame processor is used as a control FrameProcessor, as other processors like `numberer` or `dusterer` are too light-weight.
 - **A Python script** will be used to create a visual and investigate where performance begins to drop. These results will later be compared to our modified multi-threaded video player in the future.
 
 ## Results
@@ -130,7 +130,7 @@ VideoPlayer -xvvvvvvv "path\to\SimpsonsTrailer.mp4"
 As shown below, of course the more filters the less consistent the frames are. 
 | Filters | Mean headroom | Missed deadlines (us < 0) |
 | --- | --- | --- |
-| 5 Filters | +4164us | 7/29 (29%) |
+| 5 Filters | +4164us | 7/24 (29%) |
 | 6 Filters | +677us | 11/24 (46%) |
 | 7 Filters | -17746us | 22/24 (92%) |
 
@@ -138,5 +138,5 @@ As shown below, of course the more filters the less consistent the frames are.
 
 This reveals that:
 - 5 Filters is marginally stable, having a nice positive mean and only missed a few deadlines. 
-- 6 Filters oscillates aroun d the zero headroom, and the single CPU core is ~99% utilised.
-- 7 Filters shows the massive cold-start spike, and stabalises after ~4 seconds, but still mostly not meeting the deadline.
+- 6 Filters oscillates around the zero headroom
+- 7 Filters shows the massive cold-start spike, and stabilises after ~4 seconds, but still mostly not meeting the deadline.
