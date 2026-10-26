@@ -598,14 +598,14 @@ public class VideoPlayerModel {
         audioOutputStateChangedHandler.accept(audioOutputEnabled);
     }
 
-    private record PreparedFrame(
-            Image image,
-            int frameNumber,
-            long mediaTimestampUs,
-            long logicalTimestampUs,
-            long targetTimeNs,
-            long preparedAtNs) {
-    }
+//    private record PreparedFrame(
+//            Image image,
+//            int frameNumber,
+//            long mediaTimestampUs,
+//            long logicalTimestampUs,
+//            long targetTimeNs,
+//            long preparedAtNs) {
+//    }
 
     private static class PendingAudio {
         private final long timestampUs;
