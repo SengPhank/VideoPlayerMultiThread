@@ -339,13 +339,13 @@ public class VideoPlayerModel {
 
     private void displayPreparedFrame(long now) {
         PreparedFrame frame = preparedFrame;
-        currentTimestampUs = logicalTimestampUs(preparedFrame);
         preparedFrame = null;
+        currentTimestampUs = logicalTimestampUs(frame);
         relativeSeekBaseUs = NO_SEEK_REQUEST;
 
         // Dump some logging to the console once per second so that real time performance can be monitored.
         if (intFrameRate > 0 && frame.frameNumber() % intFrameRate == 0) {
-            long remainingUs = (targetTimeNs(preparedFrame) - frame.preparedAtNs()) / 1_000L;
+            long remainingUs = (targetTimeNs(frame) - frame.preparedAtNs()) / 1_000L;
             if (remainingUs < 0) {
                 System.out.printf("Frame headroom is \u001B[31m%5dus\u001B[0m out of %dus spare.%n",
                         remainingUs,
