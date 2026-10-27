@@ -1,6 +1,5 @@
 package comp3011;
 
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,20 +35,26 @@ final class FrameConversionStage implements Runnable {
 	
 	// Methods === 
 			
-	private void run() {
+	public void run() {
 		try {
 			while (running.get() == true) {
 				
 				// Take a job from the processed frames
-				FrameJob frameJob = frameProcessingStage.pollProcessed();
+				FrameJob frameJob = processedJobs.poll(50, TimeUnit.MILLISECONDS);
+				
+				if (frameJob == null) { continue; }
+				
+				// If end frame, then stop
+				if (frameJob == FrameJob.END) {
+					finished.set(true);
+					return;
+				}
+				
 				Frame frame = frameJob.frame();
 				int frameNumber = frameJob.frameNumber();
 				long timestampUs = frameJob.mediaTimestampUs();
 				
-				// If end frame, then stop after this
-				if (frameJob == FrameJob.END) {
-					finished.set(true);
-				}
+				
 				Image image = converter.convert(frame);
 				
 	            PreparedFrame preparedFrame = new PreparedFrame(
@@ -64,13 +69,14 @@ final class FrameConversionStage implements Runnable {
 		} catch (Exception e) {
 			// OTHER Exceptions
 			failure.set(e);
+			running.set(false); // Stop on error
 		}
 	}
 	
 	// Offer the raw decoded frame to downstream workers
 	private void offerJob(PreparedFrame readyJob) throws InterruptedException {
 		while (running.get()) {
-            if (readyFrame.offer(readyJob, 50, TimeUnit.MILLISECONDS)) { break; }
+            if (readyFrames.offer(readyJob, 50, TimeUnit.MILLISECONDS)) { break; }
         }
     }
 			

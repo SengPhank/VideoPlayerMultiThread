@@ -2,7 +2,6 @@ package comp3011;
 
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -10,16 +9,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.JavaFXFrameConverter;
-
-import javafx.scene.image.Image;
 
 final class FrameDecoder implements Runnable {
 	// Attributes === 
 	
 	// Thread stuff
 	private AtomicBoolean running;
-	private AtomicBoolean finished;
 	private AtomicReference<Exception> failure;
 	private BlockingQueue<FrameJob> decodedJobs;
 	
@@ -47,13 +42,14 @@ final class FrameDecoder implements Runnable {
 	// Methods === 
 		
 	// run the thread pipeline, creating the filtered frames (with audio) and sending it to the video player.
-	private void run() {
+	public void run() {
 		try {
 			while (running.get() == true) {
 	            Frame frame = grabFrame();
+	            frame = frame.clone();
+	            
 	            if (frame == null) {
 	            	offerJob(FrameJob.END);
-	                finished.set(true);
 	                return;
 	            }
 	
@@ -69,7 +65,7 @@ final class FrameDecoder implements Runnable {
 	            
 	            // Loop again if no images
 	            if (frame.image == null) {
-		            return;
+		            continue;
 	            }
 	            
 	            // On the first video frame, initialise the processors.
@@ -99,6 +95,7 @@ final class FrameDecoder implements Runnable {
 	            int frameNumber = grabber.getFrameNumber();
 	            FrameJob job = new FrameJob(frame, frameNumber, timestampUs);
 	            
+	            // Send the decoded frame down the pipeline
 	            offerJob(job);
                 
 	            
@@ -124,11 +121,6 @@ final class FrameDecoder implements Runnable {
         }
         return grabber.grabImage();
     }
-	
-	// returns the next decoded frame needed to be processed
-	public FrameJob pollFrame() {
-		return decodedJobs.poll();
-	}
 	
 	private void initialiseFrameProcessors(InfoVideo videoInfo) throws Exception {
         for (FrameProcessor processor : frameProcessors) {

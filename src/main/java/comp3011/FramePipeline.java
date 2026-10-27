@@ -45,48 +45,62 @@ public class FramePipeline {
         };
 	}
 	
+	public boolean isFinished() {
+        return finished.get();
+    }
+
+	public Exception getFailure() {
+        return failure.get();
+    }
 	
 	// Start all (Decoder, processor, converter) threads
 	public void start() {
 		running.set(true);;
 		finished.set(false);
 		failure.set(null);
-		thread.setDaemon(true);
-		thread.start();
+		
+		// Init threads
+		Thread decoderThread = new Thread(stages[0]::run, "frame-decoder");
+		Thread processorThread = new Thread(stages[1]::run, "frame-processor");
+		Thread converterThread = new Thread(stages[2]::run, "frame-converter");
+		
+		threads = List.of(
+			decoderThread,
+			processorThread,
+			converterThread
+		);
+		
+		// start each thread as a background process
+		for (Thread t : threads) {
+			t.setDaemon(true);
+			t.start();
+		}
+		
 	}
 	
 	// Stops all (Decoder, processor, converter) threads
 	public void stop() {
 		running.set(false);;
-		if (thread != null) {
-			// Give some time for UI to close before clearing all preparedFrames
-			thread.interrupt();
-			
-			try { 
-				thread.join(2000);
+		for (Thread thread : threads) {
+			if (thread != null) {
+				// Give some time for UI to close before clearing all preparedFrames
+				thread.interrupt();
+				
+				try { 
+					thread.join(2000);
+				}
+				catch (InterruptedException e) { 
+					Thread.currentThread().interrupt();
+				}
+				thread = null;
 			}
-			catch (InterruptedException e) { 
-				Thread.currentThread().interrupt();
-			}
-			thread = null;
 		}
-		readyFrame.clear();
+		readyFrames.clear();
 	}
 	
 	// returns the next ready frame, or "null" if nothing is available
 	public PreparedFrame pollFrame() {
-		return readyFrame.poll();
+		return readyFrames.poll();
 	}
 	
-	private void initialiseFrameProcessors(InfoVideo videoInfo) throws Exception {
-        for (FrameProcessor processor : frameProcessors) {
-            processor.initialise(videoInfo);
-        }
-    }
-	
-	private void processFrame(Frame frame, InfoFrame info) throws Exception {
-        for (FrameProcessor processor : frameProcessors) {
-            processor.process(frame, info);
-        }
-    }
 }
