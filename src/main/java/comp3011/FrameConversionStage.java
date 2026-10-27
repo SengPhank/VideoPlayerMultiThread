@@ -55,7 +55,13 @@ final class FrameConversionStage implements Runnable {
 				long timestampUs = frameJob.mediaTimestampUs();
 				
 				
-				Image image = converter.convert(frame);
+				Image image;
+				try {
+				    image = converter.convert(frameJob.frame());
+				} finally {
+					// release the native copy
+				    frameJob.frame().close();
+				}
 				
 	            PreparedFrame preparedFrame = new PreparedFrame(
 	            		image,
@@ -79,5 +85,4 @@ final class FrameConversionStage implements Runnable {
             if (readyFrames.offer(readyJob, 50, TimeUnit.MILLISECONDS)) { break; }
         }
     }
-			
 }

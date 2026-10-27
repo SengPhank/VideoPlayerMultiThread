@@ -36,16 +36,19 @@ final class FrameProcessingStage implements Runnable {
 				// if nothing arrived yet, loop and recheck
 				if (job == null) { continue; }
 				
-				// If this is not the final frame, then 
-				if (job != FrameJob.END) {
-					// Process the frame in order
-		            InfoFrame info = new InfoFrame(job.frameNumber(), job.mediaTimestampUs());
-		            for (FrameProcessor processor : frameProcessors) {
-		            	processor.process(job.frame(), info);
-		            }
-				}	
+				// Final frame, finish the job and exit
+				if (job == FrameJob.END) {
+                    offerJob(job);
+                    return;
+                }
+				
+				// Process the frame in order
+	            InfoFrame info = new InfoFrame(job.frameNumber(), job.mediaTimestampUs());
+	            for (FrameProcessor processor : frameProcessors) {
+	            	processor.process(job.frame(), info);
+	            }
 
-	            // Reoffer it to the conversion stage
+	            // Pass the processed job to the conversion stage
 	            offerJob(job);
 	            
 			}

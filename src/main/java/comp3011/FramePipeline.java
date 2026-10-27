@@ -5,15 +5,11 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javafx.scene.image.Image;
-
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.JavaFXFrameConverter;
-import org.bytedeco.javacv.Frame;
 
 
 public class FramePipeline {
@@ -55,7 +51,7 @@ public class FramePipeline {
 	
 	// Start all (Decoder, processor, converter) threads
 	public void start() {
-		running.set(true);;
+		running.set(true);
 		finished.set(false);
 		failure.set(null);
 		
@@ -81,21 +77,25 @@ public class FramePipeline {
 	// Stops all (Decoder, processor, converter) threads
 	public void stop() {
 		running.set(false);;
-		for (Thread thread : threads) {
-			if (thread != null) {
-				// Give some time for UI to close before clearing all preparedFrames
-				thread.interrupt();
-				
-				try { 
-					thread.join(2000);
-				}
-				catch (InterruptedException e) { 
-					Thread.currentThread().interrupt();
-				}
-				thread = null;
-			}
-		}
-		readyFrames.clear();
+		
+		// Interrupt all threads first so all blocked queues wake up immediately
+        for (Thread thread : threads) {
+            thread.interrupt();
+        }
+        
+        // Join all threads after they have all received the interrupt signal
+        for (Thread thread : threads) {
+            try {
+                thread.join(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        
+        // Clear all jobs
+		readyFrames.clear();		
+		drain(decodedJobs);
+		drain(processedJobs);
 	}
 	
 	// returns the next ready frame, or "null" if nothing is available
@@ -103,4 +103,13 @@ public class FramePipeline {
 		return readyFrames.poll();
 	}
 	
+	// Ensure all work is cleared to not have any memory leaks
+	private static void drain(BlockingQueue<FrameJob> queue) {
+	    FrameJob job;
+	    while ((job = queue.poll()) != null) {
+	        if (job != FrameJob.END) {
+	            job.frame().close();
+	        }
+	    }
+	}
 }

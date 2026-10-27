@@ -46,13 +46,12 @@ final class FrameDecoder implements Runnable {
 		try {
 			while (running.get() == true) {
 	            Frame frame = grabFrame();
-	            frame = frame.clone();
 	            
 	            if (frame == null) {
 	            	offerJob(FrameJob.END);
 	                return;
 	            }
-	
+	            
 	            long timestampUs = grabber.getTimestamp();
 	            
 	            // Add audio to queue, if there is audio, convert and add it to the queue as well.
@@ -93,6 +92,7 @@ final class FrameDecoder implements Runnable {
                 }
 	            
 	            int frameNumber = grabber.getFrameNumber();
+	            frame = frame.clone();
 	            FrameJob job = new FrameJob(frame, frameNumber, timestampUs);
 	            
 	            // Send the decoded frame down the pipeline
@@ -105,6 +105,7 @@ final class FrameDecoder implements Runnable {
 		} catch (Exception e) {
 			// OTHER Exceptions
 			failure.set(e);
+			running.set(false);
 		}
 	}
 	
