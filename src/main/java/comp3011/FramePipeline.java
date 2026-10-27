@@ -2,6 +2,7 @@ package comp3011;
 
 
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -27,17 +28,21 @@ public class FramePipeline {
 	private final List<FrameProcessor> frameProcessors;
 	private final String mediaName;
 	private final boolean audioAvailable;
+	private final AudioPlayer audioPlayer;
+	private final Queue<PendingAudio> audioOut;
 	private boolean frameProcessorsInitialised = false;
 	
 	// Methods====
 	
 	// Takes the frame grabber, converter and processors from VideoPlayerModel
-	FramePipeline (FFmpegFrameGrabber grabber, JavaFXFrameConverter converter, List<FrameProcessor> frameProcessors, String mediaName, boolean audioAvailable) {
+	FramePipeline (FFmpegFrameGrabber grabber, JavaFXFrameConverter converter, List<FrameProcessor> frameProcessors, String mediaName, boolean audioAvailable, AudioPlayer audioPlayer, Queue<PendingAudio> audioOut) {
 		this.grabber = grabber;
 		this.converter = converter;
 		this.frameProcessors = frameProcessors;
 		this.mediaName = mediaName;
 		this.audioAvailable = audioAvailable;
+		this.audioPlayer = audioPlayer;
+		this.audioOut = audioOut;
 	}
 	
 	public boolean isFinished() {
@@ -94,10 +99,14 @@ public class FramePipeline {
 	            }
 	
 	            long timestampUs = grabber.getTimestamp();
-	            // TODO audio
-//	            if (audioAvailable && frame.samples != null) {
-//	                // queueAudio(timestampUs, frame);
-//	            }
+	            
+	            // Add audio to queue
+	            if (audioAvailable && frame.samples != null) {
+		            byte[] samples = audioPlayer.copySamples(frame);
+			            if (samples.length > 0) {
+			                audioOut.add(new PendingAudio(timestampUs, samples));
+			            }
+		        }
 	
 	            if (frame.image == null) {
 	                continue;

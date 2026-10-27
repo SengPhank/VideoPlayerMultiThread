@@ -11,9 +11,9 @@
 package comp3011;
 
 import java.io.File;
-import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -42,7 +42,7 @@ public class VideoPlayerModel {
     private static final long AUDIO_LEAD_NS = 30_000_000L;
 
     private final List<FrameProcessor> frameProcessors;
-    private final Queue<PendingAudio> pendingAudio = new ArrayDeque<>();
+    private final Queue<PendingAudio> pendingAudio = new ConcurrentLinkedQueue<>();
     private final BiConsumer<Integer, Integer> videoSizeChangedHandler;
     private final Consumer<Image> frameReadyHandler;
     private final Consumer<String> statusChangedHandler;
@@ -225,7 +225,7 @@ public class VideoPlayerModel {
             openPlaybackResources(startTimestampUs);
             resetPlaybackClock(currentTimestampUs);
             playbackOpen = true;
-            pipeline = new FramePipeline(grabber, converter, frameProcessors, mediaName(videoFile), audioAvailable);
+            pipeline = new FramePipeline(grabber, converter, frameProcessors, mediaName(videoFile), audioAvailable, audioPlayer, pendingAudio);
             pipeline.start();
             playbackTimer.start();
             // prepareNextFrame();
@@ -359,17 +359,6 @@ public class VideoPlayerModel {
         
         needFrameWhilePaused = false;
         notifyFrameReady(frame.image());
-    }
-
-    private void queueAudio(long timestampUs, Frame frame) {
-        if (!audioOutputEnabled || audioPlayer == null) {
-            return;
-        }
-
-        byte[] samples = audioPlayer.copySamples(frame);
-        if (samples.length > 0) {
-            pendingAudio.add(new PendingAudio(timestampUs, samples));
-        }
     }
 
     private void writeDueAudio(long now) {
@@ -541,38 +530,4 @@ public class VideoPlayerModel {
         return timeUs;
     }
     
-    private static class PendingAudio {
-        private final long timestampUs;
-        private final byte[] samples;
-        private int offset;
-
-        PendingAudio(long timestampUs, byte[] samples) {
-            this.timestampUs = timestampUs;
-            this.samples = samples;
-        }
-
-        long timestampUs() {
-            return timestampUs;
-        }
-
-        byte[] samples() {
-            return samples;
-        }
-
-        int offset() {
-            return offset;
-        }
-
-        int remaining() {
-            return samples.length - offset;
-        }
-
-        void advance(int byteCount) {
-            offset += byteCount;
-        }
-
-        boolean finished() {
-            return offset >= samples.length;
-        }
-    }
 }
