@@ -4,7 +4,10 @@ package comp3011;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javafx.scene.image.Image;
 
@@ -15,57 +18,46 @@ import org.bytedeco.javacv.Frame;
 
 public class FramePipeline {
 	// Attributes
-	private volatile boolean running;
-	
-	// Thread stuff
-	private Thread thread;
-	private volatile boolean finished;
-	private volatile Exception failure;
-	private final ArrayBlockingQueue<PreparedFrame> readyFrame = new ArrayBlockingQueue<PreparedFrame>(4);
-	
-	private final FFmpegFrameGrabber grabber;
-	private final JavaFXFrameConverter converter;
-	private final List<FrameProcessor> frameProcessors;
-	private final String mediaName;
-	private final boolean audioAvailable;
-	private final AudioPlayer audioPlayer;
-	private final Queue<PendingAudio> audioOut;
-	private boolean frameProcessorsInitialised = false;
+	private final AtomicBoolean running = new AtomicBoolean();
+	private final AtomicBoolean finished = new AtomicBoolean();
+	private final AtomicReference<Exception> failure = new AtomicReference<>();
+
+	private final BlockingQueue<FrameJob> decodedJobs = new ArrayBlockingQueue<>(2);
+	private final BlockingQueue<FrameJob> processedJobs = new ArrayBlockingQueue<>(2);
+	private final BlockingQueue<PreparedFrame> readyFrames = new ArrayBlockingQueue<>(4);
+
+	private final Runnable[] stages;
+	private List<Thread> threads = List.of();
 	
 	// Methods====
 	
 	// Takes the frame grabber, converter and processors from VideoPlayerModel
-	FramePipeline (FFmpegFrameGrabber grabber, JavaFXFrameConverter converter, List<FrameProcessor> frameProcessors, String mediaName, boolean audioAvailable, AudioPlayer audioPlayer, Queue<PendingAudio> audioOut) {
-		this.grabber = grabber;
-		this.converter = converter;
-		this.frameProcessors = frameProcessors;
-		this.mediaName = mediaName;
-		this.audioAvailable = audioAvailable;
-		this.audioPlayer = audioPlayer;
-		this.audioOut = audioOut;
+	FramePipeline(FFmpegFrameGrabber grabber, JavaFXFrameConverter converter, List<FrameProcessor> frameProcessors, String mediaName, boolean audioAvailable, AudioPlayer audioPlayer, Queue<PendingAudio> audioOut) {
+		
+		FrameDecoder frameDecoder = new FrameDecoder(grabber, audioAvailable, decodedJobs, audioOut, audioPlayer, mediaName, frameProcessors, running, failure);
+		FrameProcessingStage frameProcessingStage = new FrameProcessingStage(decodedJobs, processedJobs, frameProcessors, running, failure);
+		FrameConversionStage frameConversionStage = new FrameConversionStage(processedJobs, readyFrames, converter, running, failure, finished);
+		
+		this.stages = new Runnable[] {
+			frameDecoder,
+			frameProcessingStage,
+			frameConversionStage
+        };
 	}
 	
-	public boolean isFinished() {
-        return finished;
-    }
 	
-	public Exception getFailure() {
-        return failure;
-    }
-	
-	// Creates and start worker threads for processing filters (one for now)
+	// Start all (Decoder, processor, converter) threads
 	public void start() {
-		running = true;
-		finished = false;
-		failure = null;
-		thread = new Thread(this::run, "frame-pipeline");
+		running.set(true);;
+		finished.set(false);
+		failure.set(null);
 		thread.setDaemon(true);
 		thread.start();
 	}
 	
-	// Stops the current thread from doing any more work (used for stop, seek and close)
+	// Stops all (Decoder, processor, converter) threads
 	public void stop() {
-		running = false;
+		running.set(false);;
 		if (thread != null) {
 			// Give some time for UI to close before clearing all preparedFrames
 			thread.interrupt();
@@ -85,90 +77,6 @@ public class FramePipeline {
 	public PreparedFrame pollFrame() {
 		return readyFrame.poll();
 	}
-	
-	// run the thread pipeline, creating the filtered frames and sending it to the video player.
-	private void run() {
-		
-		
-		try {
-			while (running) {
-	            Frame frame = grabFrame();
-	            if (frame == null) {
-	                finished = true;
-	                return;
-	            }
-	
-	            long timestampUs = grabber.getTimestamp();
-	            
-	            // Add audio to queue
-	            if (audioAvailable && frame.samples != null) {
-		            byte[] samples = audioPlayer.copySamples(frame);
-			            if (samples.length > 0) {
-			                audioOut.add(new PendingAudio(timestampUs, samples));
-			            }
-		        }
-	
-	            if (frame.image == null) {
-	                continue;
-	            }
-	            
-	            if (!frameProcessorsInitialised) {
-	            	int totalVideoFrames = grabber.getLengthInVideoFrames();
-		            double frameRate = grabber.getFrameRate();
-		            int intFrameRate = (int) Math.round(frameRate);
-		            int videoFrameDurationUs = frameRate > 0
-		                    ? (int) Math.round(1_000_000.0 / frameRate)
-		                    : 0;
-		            
-	                initialiseFrameProcessors(new InfoVideo(
-	                        mediaName,
-	                        totalVideoFrames,
-	                        frame.imageWidth,
-	                        frame.imageHeight,
-	                        frame.imageDepth,
-	                        frame.imageChannels,
-	                        frame.imageStride,
-	                        frameRate,
-	                        intFrameRate,
-	                        videoFrameDurationUs,
-	                        grabber.getPixelFormat()));
-	                frameProcessorsInitialised = true;
-	            }
-	
-	
-	            int frameNumber = grabber.getFrameNumber();
-	            InfoFrame info = new InfoFrame(frameNumber, timestampUs);
-	            processFrame(frame, info);
-	            
-	            Image image = converter.convert(frame);
-	            
-	            PreparedFrame newFrame = new PreparedFrame(
-	                    image,
-	                    frameNumber,
-	                    timestampUs,
-	                    System.nanoTime());
-	            
-	            // Wait until we successfully offer the new frame
-	            while (running) {
-	            	if (readyFrame.offer(newFrame, 50, TimeUnit.MILLISECONDS)) { break; }
-	            }
-	            
-			}
-		} catch (InterruptedException e) {
-			// stop() was called, exit quietly
-		} catch (Exception e) {
-			// OTHER Exceptions
-			failure = e;
-		}
-	}
-	
-	// Helpers (from VideoPlayerModel)
-	private Frame grabFrame() throws Exception {
-        if (audioAvailable) {
-            return grabber.grab();
-        }
-        return grabber.grabImage();
-    }
 	
 	private void initialiseFrameProcessors(InfoVideo videoInfo) throws Exception {
         for (FrameProcessor processor : frameProcessors) {
