@@ -1,19 +1,20 @@
 package comp3011;
 
-import java.io.File;
+
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.JavaFXFrameConverter;
-
 import javafx.scene.image.Image;
+
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.JavaFXFrameConverter;
+import org.bytedeco.javacv.Frame;
+
 
 public class FramePipeline {
 	// Attributes
-	volatile boolean running;
+	private volatile boolean running;
 	
 	// Thread stuff
 	private Thread thread;
@@ -26,7 +27,7 @@ public class FramePipeline {
 	private final List<FrameProcessor> frameProcessors;
 	private final String mediaName;
 	private final boolean audioAvailable;
-	
+	private boolean frameProcessorsInitialised = false;
 	
 	// Methods====
 	
@@ -50,12 +51,14 @@ public class FramePipeline {
 	// Creates and start worker threads for processing filters (one for now)
 	public void start() {
 		running = true;
+		finished = false;
+		failure = null;
 		thread = new Thread(this::run, "frame-pipeline");
 		thread.setDaemon(true);
 		thread.start();
 	}
 	
-	// Stops the current thread from doing any more work (when the user pauses)
+	// Stops the current thread from doing any more work (used for stop, seek and close)
 	public void stop() {
 		running = false;
 		if (thread != null) {
@@ -67,8 +70,8 @@ public class FramePipeline {
 			}
 			catch (InterruptedException e) { 
 				Thread.currentThread().interrupt();
-				thread = null;
 			}
+			thread = null;
 		}
 		readyFrame.clear();
 	}
@@ -80,7 +83,7 @@ public class FramePipeline {
 	
 	// run the thread pipeline, creating the filtered frames and sending it to the video player.
 	private void run() {
-		boolean frameProcessorsInitialised = false;
+		
 		
 		try {
 			while (running) {
@@ -97,7 +100,6 @@ public class FramePipeline {
 //	            }
 	
 	            if (frame.image == null) {
-	            	finished = null;
 	                continue;
 	            }
 	            
