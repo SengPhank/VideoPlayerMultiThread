@@ -134,7 +134,7 @@ As shown below, of course the more filters the less consistent the frames are.
 | 6 Filters | +677us | 11/24 (46%) |
 | 7 Filters | -17746us | 22/24 (92%) |
 
-![Figure 1](../assets/Figure_1.png)
+![Figure 1](/assets/Figure_1.png)
 
 This reveals that:
 - 5 Filters is marginally stable, having a nice positive mean and only missed a few deadlines. 

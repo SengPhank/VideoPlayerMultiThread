@@ -37,7 +37,8 @@ public class CommandLineController {
     
     // FrameProcessor data
     private record ProcessorOption(char shortFlag, String longFlag, String description, Supplier<FrameProcessor> factory) {}
-
+    
+    // add a new effect here
     private static final List<ProcessorOption> PROCESSOR_OPTIONS = List.of(
 	    new ProcessorOption('n', "number-frames", "Render the frame number onto each frame", FrameNumberer::new),
 	    new ProcessorOption('s', "scratch-frames", "Render vertical film scratches", FrameScratcher::new),
