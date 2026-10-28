@@ -40,7 +40,8 @@ public class VideoPlayerModel {
     private static final long NO_SEEK_REQUEST = -1; // Sentinel value used when no seek position is active.
     private static final long FIVE_SECONDS_US = 5_000_000L;
     private static final long AUDIO_LEAD_NS = 30_000_000L;
-
+    private static final int PREBUFFER_FRAMES = 3; // frames queued before the playback clock starts
+    
     private final List<FrameProcessor> frameProcessors;
     private final Queue<PendingAudio> pendingAudio = new ConcurrentLinkedQueue<>();
     private final BiConsumer<Integer, Integer> videoSizeChangedHandler;
@@ -318,10 +319,12 @@ public class VideoPlayerModel {
         // to replace this whole block with simple linear control flow logic
         // such as: if (!pauseRequested && preparedFrame == null) prepareNextFrame();
         // to compare.
-        if (!pauseRequested && (!pauseRequested || needFrameWhilePaused)) {
-        	// Reead before polling
-        	boolean ended = pipeline.isFinished();
-        	preparedFrame = pipeline.pollFrame();
+        if (preparedFrame == null && (!pauseRequested || needFrameWhilePaused)) {
+            boolean ended = pipeline.isFinished();
+            
+            // pre-buffer before starting the clock
+            if (firstTimestampUs == NO_SEEK_REQUEST && !ended && pipeline.readyCount() < PREBUFFER_FRAMES) { return; }
+            preparedFrame = pipeline.pollFrame();
         	
         	if (preparedFrame == null) {
                 if (ended) { finishPlayback(); }
