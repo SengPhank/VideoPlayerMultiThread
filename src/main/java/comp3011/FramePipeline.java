@@ -1,5 +1,6 @@
+// Authors:
+//  1. Sengphachanh Phank a1967663
 package comp3011;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +12,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.JavaFXFrameConverter;
-
 
 public class FramePipeline {
 	// Attributes
