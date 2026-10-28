@@ -30,8 +30,8 @@ import javafx.scene.image.Image;
  *
  * <p>
  * Owns the FFmpeg decoder, playback clock, seeking logic, audio scheduling,
- * and frame processing - which it all manages through cooperative multi-tasking
- * on a single thread. It publishes decoded frames and playback state through
+ * and frame processing - which it all manages through decoding, effects, 
+ * and conversion on multiple threads. It publishes decoded frames and playback state through
  * callbacks supplied by its owning {@link VideoPlayerController}, keeping it
  * decoupled from the JavaFX view.
  * </p>
@@ -229,7 +229,6 @@ public class VideoPlayerModel {
             pipeline = new FramePipeline(grabber, converter, frameProcessors, mediaName(videoFile), audioAvailable, audioPlayer, pendingAudio);
             pipeline.start();
             playbackTimer.start();
-            // prepareNextFrame();
             notifyPlaybackStateChanged();
         } catch (Exception e) {
             handlePlaybackError(e);
@@ -291,8 +290,7 @@ public class VideoPlayerModel {
     // getting our required work out of the way quickly so that we can return control flow to the JavaFX event loop for
     // handling user interaction with the GUI and rendering. We have three jobs: (1) keep audio flowing if sound is on,
     // (2) display a frame if it is due and (3) prepare the next frame if we're in the window after the previous frame
-    // has gone to the display. We don't buffer frames here, just handling them one at a time. Not a great architecture,
-    // living on the edge a bit, but can't do much better on a single thread.
+    // has gone to the display. We don't buffer frames here, just handling them one at a time.
     private void pumpPlayback(long now) {
         if (!playbackOpen) {
             return;

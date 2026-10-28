@@ -1,4 +1,4 @@
-# Single-Threaded Baseline Performance Analysis
+# Multi-Threaded Performance Analysis
 
 ## Purpose
 We use quantitative methods to measure the headroom trace under increasing FrameProcessor loads. The result will allow us to identify key points where multi-threaded core scheduling succeeds compared to single-threaded core scheduling..

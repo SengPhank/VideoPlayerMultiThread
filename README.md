@@ -34,7 +34,7 @@ and each group gets its own thread.
 
 ## Design trade-offs
 
-- The ready frame output is limited by the slowest performer.
+- The throughput is limited by the slowest stage.
 - Capping threads at the core count avoids oversubscribing on small machines.
 - Running whole frames on a pool of workers. That would need every effect to be thread-safe, and the per-instance random seeds would differ between copies, breaking deterministic output.
 
