@@ -45,7 +45,8 @@ public class VideoPlayerController {
                 this::onFrameReady,
                 this::onStatusChanged,
                 this::onPlaybackStateChanged,
-                this::onAudioOutputStateChanged);
+                this::onAudioOutputStateChanged,
+                this::onSubtitleStateChanged);
 
         view.getStartOverButton().setOnAction(_ -> startOver());
         view.getBackFiveButton().setOnAction(_ -> backFiveSeconds());
@@ -53,6 +54,7 @@ public class VideoPlayerController {
         view.getForwardFiveButton().setOnAction(_ -> forwardFiveSeconds());
         view.getStopButton().setOnAction(_ -> stopAndExit());
         view.getAudioButton().setOnAction(_ -> toggleAudioOutput());
+        view.getSubtitleButton().setOnAction(_ -> toggleSubtitles());
         view.showAudioEnabled(model.isAudioOutputEnabled());
     }
 
@@ -76,6 +78,9 @@ public class VideoPlayerController {
             } else if (event.getCode() == KeyCode.A) {
                 toggleAudioOutput();
                 event.consume();
+            } else if (event.getCode() == KeyCode.S) {
+            	toggleSubtitles();
+            	event.consume();
             }
         });
     }
@@ -112,6 +117,10 @@ public class VideoPlayerController {
     private void toggleAudioOutput() {
         model.toggleAudioOutput();
     }
+    
+    private void toggleSubtitles() {
+    	model.toggleSubtitles();
+    }
 
     private void stopAndExit() {
         model.stopPlayback();
@@ -140,5 +149,9 @@ public class VideoPlayerController {
 
     private void onAudioOutputStateChanged(boolean audioOutputEnabled) {
         view.showAudioEnabled(audioOutputEnabled);
+    }
+    
+    private void onSubtitleStateChanged(boolean subtitlesEnabled) {
+    	view.showSubtitleEnabled(subtitlesEnabled);
     }
 }

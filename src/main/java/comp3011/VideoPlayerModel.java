@@ -49,6 +49,7 @@ public class VideoPlayerModel {
     private final Consumer<String> statusChangedHandler;
     private final BiConsumer<Boolean, Boolean> playbackStateChangedHandler;
     private final Consumer<Boolean> audioOutputStateChangedHandler;
+    private final Consumer<Boolean> subtitleStateChangedHandler;
 
     private FramePipeline pipeline;
     private boolean needFrameWhilePaused;
@@ -77,6 +78,7 @@ public class VideoPlayerModel {
     private boolean pauseRequested;
     private boolean audioOutputEnabled;
     private boolean audioAvailable;
+    private boolean subtitlesEnabled;
     private long currentTimestampUs;
     private long videoDurationUs = NO_SEEK_REQUEST;
     private int videoFrameDurationUs;
@@ -96,13 +98,15 @@ public class VideoPlayerModel {
             Consumer<Image> frameReadyHandler,
             Consumer<String> statusChangedHandler,
             BiConsumer<Boolean, Boolean> playbackStateChangedHandler,
-            Consumer<Boolean> audioOutputStateChangedHandler) {
+            Consumer<Boolean> audioOutputStateChangedHandler,
+            Consumer<Boolean> subtitleStateChangedHandler) {
         audioOutputEnabled = audioEnabled;
         this.videoSizeChangedHandler = videoSizeChangedHandler;
         this.frameReadyHandler = frameReadyHandler;
         this.statusChangedHandler = statusChangedHandler;
         this.playbackStateChangedHandler = playbackStateChangedHandler;
         this.audioOutputStateChangedHandler = audioOutputStateChangedHandler;
+        this.subtitleStateChangedHandler = subtitleStateChangedHandler;
         this.frameProcessors = List.copyOf(frameProcessors);
     }
 
@@ -168,6 +172,12 @@ public class VideoPlayerModel {
         notifyStatusChanged("Stopped");
         notifyFrameReady(null);
         notifyPlaybackStateChanged();
+    }
+    
+    public void toggleSubtitles() {
+    	subtitlesEnabled = !subtitlesEnabled;
+    	notifySubtitleStateChanged();
+    	System.out.println("Subtitles toggled!");
     }
 
     public void shutdown() {
@@ -509,6 +519,10 @@ public class VideoPlayerModel {
 
     private void notifyAudioOutputStateChanged() {
         audioOutputStateChangedHandler.accept(audioOutputEnabled);
+    }
+    
+    private void notifySubtitleStateChanged() {
+    	subtitleStateChangedHandler.accept(subtitlesEnabled);
     }
 
 //    private record PreparedFrame(
