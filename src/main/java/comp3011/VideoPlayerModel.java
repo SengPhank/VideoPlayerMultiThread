@@ -178,6 +178,8 @@ public class VideoPlayerModel {
     	subtitlesEnabled = !subtitlesEnabled;
     	notifySubtitleStateChanged();
     	System.out.println("Subtitles toggled!");
+    	toggleAllProcessors();
+    	
     }
 
     public void shutdown() {
@@ -543,6 +545,14 @@ public class VideoPlayerModel {
     private long logicalTimestampUs(PreparedFrame f) {
     	long timeUs = logicalPlaybackBaseUs + Math.max(0, f.mediaTimestampUs() - firstTimestampUs);
         return timeUs;
+    }
+    
+    public void toggleAllProcessors() {
+        for (FrameProcessor processor : frameProcessors) {
+            if (processor instanceof ToggleableProcessor toggleable) {
+                toggleable.toggle();
+            }
+        }
     }
     
 }

@@ -183,7 +183,8 @@ public class CommandLineController {
     
     private void addProcessor(ProcessorOption option, String token) {
         if (option == null) { setError("Unknown option: " + token); return; }
-        frameProcessors.add(option.factory().get());
+        ToggleableProcessor toggleable = new ToggleableProcessor(option.factory().get(), true);
+        frameProcessors.add(toggleable);
     }
     private void setDisplayId(int displayId) {
         if (this.displayId != null && this.displayId != displayId) {
