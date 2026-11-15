@@ -355,7 +355,7 @@ public class VideoPlayerView {
         Canvas canvas = new Canvas(ICON_SIZE, ICON_SIZE);
         GraphicsContext gc = canvas.getGraphicsContext2D();
 
-        Color color = subtitlesEnabled ? Color.BLUE : Color.BLACK;
+        Color color = Color.BLACK;
         gc.setStroke(color);
         gc.setFill(color);
         gc.setLineWidth(1.5);
@@ -369,7 +369,13 @@ public class VideoPlayerView {
         gc.fillRect(11, 13, 6, 1.5); // Middle bar
         gc.fillRect(15.5, 13, 1.5, 4); // Bottom-right vertical
         gc.fillRect(11, 16, 6, 1.5); // Bottom bar
-
+        
+        // slash like the muted speaker
+        if (!subtitlesEnabled) {
+            gc.setLineWidth(2.0);
+            gc.strokeLine(5, 22, 23, 6);
+        }
+        
         return canvas;
     }
 

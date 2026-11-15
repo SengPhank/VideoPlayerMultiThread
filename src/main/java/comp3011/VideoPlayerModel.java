@@ -50,6 +50,7 @@ public class VideoPlayerModel {
     private final BiConsumer<Boolean, Boolean> playbackStateChangedHandler;
     private final Consumer<Boolean> audioOutputStateChangedHandler;
     private final Consumer<Boolean> subtitleStateChangedHandler;
+    private final ToggleableProcessor subtitleProcessor;
 
     private FramePipeline pipeline;
     private boolean needFrameWhilePaused;
@@ -99,7 +100,8 @@ public class VideoPlayerModel {
             Consumer<String> statusChangedHandler,
             BiConsumer<Boolean, Boolean> playbackStateChangedHandler,
             Consumer<Boolean> audioOutputStateChangedHandler,
-            Consumer<Boolean> subtitleStateChangedHandler) {
+            Consumer<Boolean> subtitleStateChangedHandler,
+            ToggleableProcessor subtitleProcessor) {
         audioOutputEnabled = audioEnabled;
         this.videoSizeChangedHandler = videoSizeChangedHandler;
         this.frameReadyHandler = frameReadyHandler;
@@ -108,6 +110,7 @@ public class VideoPlayerModel {
         this.audioOutputStateChangedHandler = audioOutputStateChangedHandler;
         this.subtitleStateChangedHandler = subtitleStateChangedHandler;
         this.frameProcessors = List.copyOf(frameProcessors);
+        this.subtitleProcessor = subtitleProcessor;
     }
 
     public void play(File file) {
@@ -175,13 +178,14 @@ public class VideoPlayerModel {
     }
     
     public void toggleSubtitles() {
-    	subtitlesEnabled = !subtitlesEnabled;
-    	notifySubtitleStateChanged();
-    	System.out.println("Subtitles toggled!");
-    	toggleAllProcessors();
-    	
+    	subtitleProcessor.toggle();
+        notifySubtitleStateChanged();
     }
-
+    
+    public boolean isSubtitlesEnabled() {
+        return subtitleProcessor.isEnabled();
+    }
+    
     public void shutdown() {
         closePlaybackResources();
     }
@@ -524,7 +528,7 @@ public class VideoPlayerModel {
     }
     
     private void notifySubtitleStateChanged() {
-    	subtitleStateChangedHandler.accept(subtitlesEnabled);
+        subtitleStateChangedHandler.accept(subtitleProcessor.isEnabled());
     }
 
 //    private record PreparedFrame(
@@ -545,14 +549,6 @@ public class VideoPlayerModel {
     private long logicalTimestampUs(PreparedFrame f) {
     	long timeUs = logicalPlaybackBaseUs + Math.max(0, f.mediaTimestampUs() - firstTimestampUs);
         return timeUs;
-    }
-    
-    public void toggleAllProcessors() {
-        for (FrameProcessor processor : frameProcessors) {
-            if (processor instanceof ToggleableProcessor toggleable) {
-                toggleable.toggle();
-            }
-        }
     }
     
 }

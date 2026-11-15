@@ -35,10 +35,22 @@ public class CommandLineController {
     private File videoFile;
     private String errorMessage;
     
+    private final CueBank cueBank = new CueBank(testCues());
+    private final ToggleableProcessor subtitleProcessor = new ToggleableProcessor(new FrameSubtitle(cueBank), false);
+    private boolean subtitleProcessorAdded = false;
+    
+    // TEST ONLY! DELETE ME AFTER
+    private static List<Cue> testCues() {
+        return List.of(
+            new Cue(1_000_000, 4_000_000, List.of("Welcome to SubtitleWise!", "This is a sample SRT subtitle.")),
+            new Cue(5_000_000, 9_000_000, List.of("You can use this file to test", "our subtitle tools.")),
+            new Cue(10_000_000, 14_000_000, List.of("Features include:", "Translation and editing")));
+    }
+        
     // FrameProcessor data
     private record ProcessorOption(char shortFlag, String longFlag, String description, Supplier<FrameProcessor> factory) {}
     
-    // add a new effect here
+    // add a new effect here (not subtitles as thats its own unique frame processor)
     private static final List<ProcessorOption> PROCESSOR_OPTIONS = List.of(
 	    new ProcessorOption('n', "number-frames", "Render the frame number onto each frame", FrameNumberer::new),
 	    new ProcessorOption('s', "scratch-frames", "Render vertical film scratches", FrameScratcher::new),
@@ -114,7 +126,11 @@ public class CommandLineController {
     public boolean shouldLaunchApplication() {
         return errorMessage == null && videoFile != null;
     }
-
+    
+    public ToggleableProcessor getSubtitleProcessor() { 
+    	return subtitleProcessor; 
+    }
+    
     private void parse() {
         List<String> videoFiles = new ArrayList<>();
         
@@ -159,6 +175,7 @@ public class CommandLineController {
     			case 'x' -> maximiseRequested = true;
     			case '1' -> setDisplayId(1);
     			case '2' -> setDisplayId(2);
+    			case 'S' -> addSubtitleProcessor();
     			default -> addProcessor(shortFlagLookup.get(flag), arg);
     		}
     	}
@@ -176,6 +193,7 @@ public class CommandLineController {
 			case "maximise" -> maximiseRequested = true;
 			case "monitor-1" -> setDisplayId(1);
 			case "monitor-2" -> setDisplayId(2);
+			case "subtitle-frames" -> addSubtitleProcessor();
 			default -> addProcessor(longFlagLookup.get(flag), arg);
 		}
     	
@@ -186,6 +204,16 @@ public class CommandLineController {
         ToggleableProcessor toggleable = new ToggleableProcessor(option.factory().get(), true);
         frameProcessors.add(toggleable);
     }
+    
+    // Make it its own toggle, as we dont need more than 1 subtitle frame processor.
+    private void addSubtitleProcessor() {
+        subtitleProcessor.setEnabled(true);
+        if (!subtitleProcessorAdded) {
+            frameProcessors.add(subtitleProcessor);
+            subtitleProcessorAdded = true;
+        }
+    }
+    
     private void setDisplayId(int displayId) {
         if (this.displayId != null && this.displayId != displayId) {
         	setError("Only one display option can be used");

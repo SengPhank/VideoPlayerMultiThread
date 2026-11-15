@@ -31,13 +31,14 @@ public class VideoPlayerController {
     private final VideoPlayerModel model;
     private final VideoPlayerView view;
     private final BiConsumer<Integer, Integer> videoSizeChangedHandler;
-
+    
     public VideoPlayerController(
             boolean audioEnabled,
             BiConsumer<Integer, Integer> videoSizeChangedHandler,
-            List<FrameProcessor> frameProcessors) {
+            List<FrameProcessor> frameProcessors, ToggleableProcessor subtitleProcessor) {
         this.view = new VideoPlayerView();
         this.videoSizeChangedHandler = videoSizeChangedHandler;
+        
         model = new VideoPlayerModel(
                 audioEnabled,
                 frameProcessors,
@@ -46,7 +47,8 @@ public class VideoPlayerController {
                 this::onStatusChanged,
                 this::onPlaybackStateChanged,
                 this::onAudioOutputStateChanged,
-                this::onSubtitleStateChanged);
+                this::onSubtitleStateChanged,
+                subtitleProcessor);
 
         view.getStartOverButton().setOnAction(_ -> startOver());
         view.getBackFiveButton().setOnAction(_ -> backFiveSeconds());
@@ -56,6 +58,7 @@ public class VideoPlayerController {
         view.getAudioButton().setOnAction(_ -> toggleAudioOutput());
         view.getSubtitleButton().setOnAction(_ -> toggleSubtitles());
         view.showAudioEnabled(model.isAudioOutputEnabled());
+        view.showSubtitleEnabled(model.isSubtitlesEnabled());
     }
 
     public void installKeyboardShortcuts(Scene scene) {
@@ -119,7 +122,7 @@ public class VideoPlayerController {
     }
     
     private void toggleSubtitles() {
-    	model.toggleSubtitles();
+        model.toggleSubtitles();
     }
 
     private void stopAndExit() {

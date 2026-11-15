@@ -31,6 +31,10 @@ public class ToggleableProcessor extends FrameProcessor {
 		if (enabled.get()) processor.process(frame, info);
 	}
 	
+	public void setEnabled(boolean on) {
+	    enabled.set(on);
+	}
+	
 	public boolean toggle() {
 		boolean state = !enabled.get();
 		enabled.set(state);
