@@ -14,11 +14,10 @@
 \begin{document}
 \maketitle
 
-\section*{Ideas and Features}
-\subsection*{Captions}
+\section*{Captions}
 The core feature of this assignment is about subtitles, so this should be the main priority. We're required to include a feature that translates video to subtitles in real time. This means calling an external api at \textit{https://api.openai.com/v1/audio/transcriptions}, and showing the subtitles using frame processors as seen in Assignment 2.
 
-\subsubsection*{Real-time versus Pre-processing subtitles}
+\subsection*{Real-time versus Pre-processing subtitles}
 We need to decide whether we should analyse all the sound file at once to grab the subtitles before the video plays, or process each relevant subtitles during playtime. As pre-processing the entire video for subtitles is easier, the user must pay the cost of having to wait \textbf{a long time}. Instead, we'll process as the video gets watched.
 
 \subsection*{Subtitle processing timing}
@@ -26,20 +25,28 @@ We can't just process the next couple seconds of where we currently are as that 
 \\\\
 However there is only one complex issue that this causes: If a word were long enough to be between two chunks, then it'll get cut off and look unnatural. Currently I don't know how to fix this, but maybe I can figure something out in the future
 
-\subsection*{Advanced Scrubbing}
+\subsection*{Subtitle styling and user requirements}
+To make subtitles visibly engaging and feel natural across multiple backgrounds, we need to style how the frame processor handles drawing subtitles. Two new files \textbf{SubtitleColours.java} and \textbf{SubtitleFont.java} were first initialised using Java's GUI library \textit{awt} to make modifying text easier by hand. Some other optimisation feature includes bit manip on argb payload.
+\\\\
+To handle the background and how much characters should be displayed, \textbf{SubtitleRenderer.java} draws the cue with the given colour and font, then \textbf{FrameSubtitle} processor unpacks that and burns it into the next frame.
+
+\section*{Draggable Windowed}
+The current window of the video player is ever only in full screen or sits awkwardly in the corner of your screen on a monitor, and you cant drag the window anywhere. It is important that the user has full-time control of where the window should be.
+
+\subsection*{Approach to draggable window}
+My initial approach is to reprocess the \textbf{VideoPlayerApp} class to create a top border on the current window, then create a click and drag detection. As the user clicks the this top bar, the window moves relative to the mouse while clicking and dragging the window.
+
+\section*{Advanced Scrubbing}
 I'm taking heavy inspiration from Youtube here, and the main feature I use is their advanced scrubbing system; being able to click on the bar and drag around while seeing the frame for that specific video. I'd love to research a way to implement this soon.
 
-\subsection*{Advanced Audio control}
+\section*{Advanced Audio control}
 Another nice control to have is to change the volume of the video. Instead of a binary on/off button, I want dynamic audio control.
 
-\subsection*{Magnifier control}
+\section*{Magnifier control}
 A feature I sometimes see myself inadvertently doing when using any video player or photos app is zooming in/out of something small in a video. Perhaps this could be done if I have enough time.
 
-\subsection*{Other settings options}
+\section*{Other settings options}
 Other setting and customisation including resizing, moving and changing the opacity of translation. Also, applying and removing filters in real-time instead of having to pre-run a command.
-
-\subsection*{Draggable Windowed}
-The current window of the video player is ever only in full screen or sits awkwardly in the corner of your screen on a monitor, and you cant drag the window anywhere. Perhaps this could be a feature
 
 % \begin{figure}[H]
 %     \centering
