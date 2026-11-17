@@ -55,6 +55,15 @@ public class VideoPlayerModel {
     private FramePipeline pipeline;
     private boolean needFrameWhilePaused;
     
+    // Cuebank for subtitle handling
+    private volatile CueBank cueBank;
+    private Cue lastCue;
+    private SubtitleRenderer.Strip strip;
+
+    public void setCueBank(CueBank cueBank) {
+        this.cueBank = cueBank;
+    }
+    
     // This is the critical wiring that allows the framework (JavaFX) to call
     // into our model logic every time it goes around its event loop. Every GUI
     // system has an event loop so that button clicks, key presses and window
@@ -117,6 +126,7 @@ public class VideoPlayerModel {
         videoFile = file;
         videoDurationUs = NO_SEEK_REQUEST;
         videoFrameDurationUs = 0;
+        loadSubtitles();
         startPlayback(0, false, NO_SEEK_REQUEST);
     }
 
@@ -476,6 +486,12 @@ public class VideoPlayerModel {
             return fileName;
         }
         return fileName.substring(0, extensionStart);
+    }
+    
+    private void loadSubtitles() {
+        if (subtitleProcessor.getProcessor() instanceof FrameSubtitle subtitles) {
+            subtitles.setCueBank(CueBank.testBank());
+        }
     }
 
     private long clampSeekTimestamp(long timestampUs) {

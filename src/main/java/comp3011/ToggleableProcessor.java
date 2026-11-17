@@ -44,4 +44,8 @@ public class ToggleableProcessor extends FrameProcessor {
 	public boolean isEnabled() {
 		return enabled.get();
 	}
+	
+	public FrameProcessor getProcessor() {
+	    return processor;
+	}
 }

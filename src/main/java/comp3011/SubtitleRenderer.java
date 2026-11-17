@@ -7,6 +7,17 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
+/* User requirements
+- The subtitle text should be legible regardless of the frame background.
+- Subtitle text should be rendered using a san serif white font with a black outline.
+- Subtitle text should be legible regardless of the frame background and disrupt the playing video scene as little as possible.
+- Subtitle text should not exceed 42 characters per line.
+- Subtitle text should not exceed two lines. Prefer one line when possible.
+- Subtitle text for an entire phrase or sentence should appear on screen at the moment it is spoken, remaining there for no less than 1 second and no more than 7 seconds
+- Subtitle text should be synchronised with dialogue at phrase and sentence level where possible - ie. bring up new subtitles following natural pauses in the dialogue where the timing permits.
+- Line breaks, if required, should occur after punctuation where possible.
+ */
+
 /** Draws one cue's text into pixels. It knows nothing about frames: FrameSubtitle copies the result onto them. */
 public final class SubtitleRenderer {
 	// the text lives in the bottom 35% of the video

@@ -35,18 +35,9 @@ public class CommandLineController {
     private File videoFile;
     private String errorMessage;
     
-    private final CueBank cueBank = new CueBank(testCues());
-    private final ToggleableProcessor subtitleProcessor = new ToggleableProcessor(new FrameSubtitle(cueBank), true);
+    private final ToggleableProcessor subtitleProcessor = new ToggleableProcessor(new FrameSubtitle(), false);
     private boolean subtitleProcessorAdded = false;
     
-    // TEST ONLY! DELETE ME AFTER
-    private static List<Cue> testCues() {
-        return List.of(
-            new Cue(1_000_000, 4_000_000, List.of("Welcome to SubtitleWise!", "This is a sample SRT subtitle.")),
-            new Cue(5_000_000, 9_000_000, List.of("You can use this file to test", "our subtitle tools.")),
-            new Cue(10_000_000, 14_000_000, List.of("Features include:", "Translation and editing")));
-    }
-       
     // FrameProcessor data
     private record ProcessorOption(char shortFlag, String longFlag, String description, Supplier<FrameProcessor> factory) {}
     
@@ -62,7 +53,8 @@ public class CommandLineController {
 	    new ProcessorOption('j', "jitter-frames", "Randomly displace frames by a few pixels", FrameJitterer::new),
 	    new ProcessorOption('m', "mottle-frames", "Add cloudy emulsion mottling", FrameMottler::new),
 	    new ProcessorOption('b', "bleed-frames", "Bleed light into frames", FrameBleeder::new),
-	    new ProcessorOption('p', "pepper-frames", "Pepper frames with dark spots/blotches", FramePepperer::new)
+	    new ProcessorOption('p', "pepper-frames", "Pepper frames with dark spots/blotches", FramePepperer::new),
+	    new ProcessorOption('S', "subtitle-frames", "Add subtitles to the bottom screen", FrameSubtitle::new)
 	);
     		
     // Fast lookup tables
