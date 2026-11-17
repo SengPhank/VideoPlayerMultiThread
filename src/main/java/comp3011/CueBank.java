@@ -13,8 +13,8 @@ public class CueBank {
 	public Cue cueTime(long timestampUs) {
 		for (Cue c : cueList) {
 			// If the time is within the cue, then return this cue
-			if (c.endUs() < timestampUs && timestampUs <= c.startUs()) {
-				return c;
+			if (timestampUs >= c.startUs() && timestampUs < c.endUs()) {
+			    return c;
 			}
 		}
 		return null;

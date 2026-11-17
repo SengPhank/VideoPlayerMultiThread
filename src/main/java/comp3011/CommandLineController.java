@@ -36,7 +36,7 @@ public class CommandLineController {
     private String errorMessage;
     
     private final CueBank cueBank = new CueBank(testCues());
-    private final ToggleableProcessor subtitleProcessor = new ToggleableProcessor(new FrameSubtitle(cueBank), false);
+    private final ToggleableProcessor subtitleProcessor = new ToggleableProcessor(new FrameSubtitle(cueBank), true);
     private boolean subtitleProcessorAdded = false;
     
     // TEST ONLY! DELETE ME AFTER
@@ -46,7 +46,7 @@ public class CommandLineController {
             new Cue(5_000_000, 9_000_000, List.of("You can use this file to test", "our subtitle tools.")),
             new Cue(10_000_000, 14_000_000, List.of("Features include:", "Translation and editing")));
     }
-        
+       
     // FrameProcessor data
     private record ProcessorOption(char shortFlag, String longFlag, String description, Supplier<FrameProcessor> factory) {}
     
@@ -158,10 +158,6 @@ public class CommandLineController {
             }
         }
         
-        // print test
-//        if (errorMessage == null) {
-//        	System.out.println("Valid frame processors: " + frameProcessors.size());
-//        }
     }
     
     private void parseShortOptions(String arg) {
