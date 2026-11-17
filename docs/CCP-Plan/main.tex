@@ -26,7 +26,7 @@ We can't just process the next couple seconds of where we currently are as that 
 However there is only one complex issue that this causes: If a word were long enough to be between two chunks, then it'll get cut off and look unnatural. Currently I don't know how to fix this, but maybe I can figure something out in the future
 
 \subsection*{Subtitle styling and user requirements}
-To make subtitles visibly engaging and feel natural across multiple backgrounds, we need to style how the frame processor handles drawing subtitles. Two new files \textbf{SubtitleColours.java} and \textbf{SubtitleFont.java} were first initialised using Java's GUI library \textit{awt} to make modifying text easier by hand. Some other optimisation feature includes bit manip on argb payload.
+To make subtitles visibly engaging and feel natural across multiple backgrounds, we need to style how the frame processor handles drawing subtitles. Two new files \textbf{SubtitleColours.java} and \textbf{SubtitleFont.java} were first initialised using Java's GUI library \textit{awt} to make modifying text easier by hand. Some other optimisation feature includes bit manip on argb payload, and re-using cue strips to avoid unnecessary recomputation
 \\\\
 To handle the background and how much characters should be displayed, \textbf{SubtitleRenderer.java} draws the cue with the given colour and font, then \textbf{FrameSubtitle} processor unpacks that and burns it into the next frame.
 
