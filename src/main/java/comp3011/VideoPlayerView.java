@@ -30,6 +30,8 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 
 /**
  * The view part of the video player model-view-controller architecture.
@@ -58,7 +60,10 @@ public class VideoPlayerView {
     private final Button stopButton;
     private final Button audioButton;
     private final Button subtitleButton;
-
+    private final HBox titleBar;
+    private final Button minimiseButton = new Button("-");
+    private final Button closeButton = new Button("X");
+    
     public VideoPlayerView() {
         imageView.setPreserveRatio(true);
         imageView.setSmooth(false);
@@ -78,7 +83,7 @@ public class VideoPlayerView {
         audioButton = iconButton(createAudioIcon(false));
         subtitleButton = iconButton(createSubtitleIcon(false));
         setPlaybackControlsDisabled(true);
-
+                
         HBox controls = new HBox(
                 10,
                 startOverButton,
@@ -89,13 +94,32 @@ public class VideoPlayerView {
                 audioButton,
                 subtitleButton,
                 statusLabel);
-
+        
         controls.setPadding(new Insets(10));
 
         BorderPane content = new BorderPane();
+        
+        // Create Top bar 
+        Label title = new Label("Java Video Player");
+        title.setStyle("-fx-text-fill: white;");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        for (Button b : new Button[] { minimiseButton, closeButton }) {
+            b.setFocusTraversable(false);
+            b.setStyle("-fx-background-color: transparent; -fx-text-fill: white;");
+        }
+
+        titleBar = new HBox(8, title, spacer, minimiseButton, closeButton);
+        titleBar.setAlignment(Pos.CENTER_LEFT);
+        titleBar.setPadding(new Insets(4, 8, 4, 12));
+        titleBar.setStyle("-fx-background-color: #2b2b2b;");
+        content.setTop(titleBar);
+        
+        // Create bottom bar
         content.setCenter(videoPane);
         content.setBottom(controls);
-
+        
         configureTooltipLabel();
 
         root = new StackPane(content, tooltipLayer);
@@ -399,4 +423,8 @@ public class VideoPlayerView {
         line.setStrokeLineCap(StrokeLineCap.ROUND);
         return line;
     }
+    
+    public Node getTitleBar() { return titleBar; }
+    public Button getMinimiseButton() { return minimiseButton; }
+    public Button getCloseButton() { return closeButton; }
 }

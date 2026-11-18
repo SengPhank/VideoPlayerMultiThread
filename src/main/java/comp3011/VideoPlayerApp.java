@@ -38,7 +38,11 @@ public class VideoPlayerApp extends Application {
     private Rectangle2D selectedScreenBounds;
     private int videoWidth;
     private int videoHeight;
-
+    
+    private boolean placed;
+    private double dragOffsetX;
+    private double dragOffsetY;
+    
     @Override
     public void start(Stage stage) {
         this.stage = stage;
@@ -56,6 +60,11 @@ public class VideoPlayerApp extends Application {
         stage.setScene(scene);
         moveToSelectedScreen(stage);
         stage.setMaximized(commandLineController.isMaximiseRequested());
+        
+        // Hook top bar with mouse click
+        stage.initStyle(javafx.stage.StageStyle.UNDECORATED);
+        installWindowControls(controller.getView());
+        
         stage.show();
 
         stage.outputScaleXProperty().addListener((_, _, _) -> updateVideoSize());
@@ -119,7 +128,11 @@ public class VideoPlayerApp extends Application {
         controller.getView().setVideoDisplaySize(displayWidth, displayHeight);
         if (!stage.isMaximized()) {
             stage.sizeToScene();
-            alignSceneToSelectedScreen();
+            if (!placed) {
+            	// First launch, screen appears in the corner
+                alignSceneToSelectedScreen();
+                placed = true;
+            }
         }
     }
 
@@ -148,5 +161,23 @@ public class VideoPlayerApp extends Application {
         }
 
         launch(args);
+    }
+    
+    private void installWindowControls(VideoPlayerView view) {
+        view.getTitleBar().setOnMousePressed(event -> {
+        	// where inside the window we grabbed it
+            dragOffsetX = event.getScreenX() - stage.getX();
+            dragOffsetY = event.getScreenY() - stage.getY();
+        });
+        view.getTitleBar().setOnMouseDragged(event -> {
+            if (stage.isMaximized()) { return; }
+            stage.setX(event.getScreenX() - dragOffsetX);
+            stage.setY(event.getScreenY() - dragOffsetY);
+        });
+        view.getMinimiseButton().setOnAction(_ -> stage.setIconified(true));
+        view.getCloseButton().setOnAction(_ -> {
+            controller.shutdown();
+            javafx.application.Platform.exit();
+        });
     }
 }
