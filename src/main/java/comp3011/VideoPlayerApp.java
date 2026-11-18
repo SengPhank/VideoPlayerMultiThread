@@ -46,7 +46,8 @@ public class VideoPlayerApp extends Application {
     @Override
     public void start(Stage stage) {
         this.stage = stage;
-
+        stage.initStyle(javafx.stage.StageStyle.UNDECORATED);
+        
         controller = new VideoPlayerController(
                 commandLineController.isAudioRequested(),
                 this::setVideoSize,
@@ -62,7 +63,6 @@ public class VideoPlayerApp extends Application {
         stage.setMaximized(commandLineController.isMaximiseRequested());
         
         // Hook top bar with mouse click
-        stage.initStyle(javafx.stage.StageStyle.UNDECORATED);
         installWindowControls(controller.getView());
         
         stage.show();
@@ -175,9 +175,8 @@ public class VideoPlayerApp extends Application {
             stage.setY(event.getScreenY() - dragOffsetY);
         });
         view.getMinimiseButton().setOnAction(_ -> stage.setIconified(true));
-        view.getCloseButton().setOnAction(_ -> {
-            controller.shutdown();
-            javafx.application.Platform.exit();
-        });
+        
+        // Platform.exit() calls stop()
+        view.getCloseButton().setOnAction(_ -> javafx.application.Platform.exit());
     }
 }

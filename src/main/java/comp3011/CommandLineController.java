@@ -149,6 +149,11 @@ public class CommandLineController {
             	setError("No video file specified.");
             }
         }
+        // Register the subtitle processor to be toggleable later
+		if (!subtitleProcessorAdded) {
+		    frameProcessors.add(subtitleProcessor);
+		    subtitleProcessorAdded = true;
+		}
         
     }
     
