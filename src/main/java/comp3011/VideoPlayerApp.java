@@ -17,6 +17,8 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.scene.Cursor;
+import javafx.scene.input.MouseEvent;
 
 /**
  * Extents JavaFX's Application class and is the entry point for the video player.
@@ -42,6 +44,15 @@ public class VideoPlayerApp extends Application {
     private boolean placed;
     private double dragOffsetX;
     private double dragOffsetY;
+    
+    // Resizing fields
+    private static final double RESIZE_MARGIN = 6;
+    private static final double MIN_WIDTH = 320;
+    private static final double MIN_HEIGHT = 240;
+    private boolean resizing;
+    private boolean wasResized;
+    private boolean resizeLeft, resizeRight, resizeTop, resizeBottom;
+    private double startX, startY, startW, startH, startMouseX, startMouseY;
     
     @Override
     public void start(Stage stage) {
@@ -70,7 +81,8 @@ public class VideoPlayerApp extends Application {
         stage.outputScaleXProperty().addListener((_, _, _) -> updateVideoSize());
         stage.outputScaleYProperty().addListener((_, _, _) -> updateVideoSize());
         stage.setOnCloseRequest(_ -> controller.shutdown());
-
+        
+        installResizeHandles(scene);
         playVideo();
     }
 
@@ -126,7 +138,7 @@ public class VideoPlayerApp extends Application {
         double displayHeight = videoHeight / outputScaleY;
 
         controller.getView().setVideoDisplaySize(displayWidth, displayHeight);
-        if (!stage.isMaximized()) {
+        if (!stage.isMaximized() && !wasResized) {
             stage.sizeToScene();
             if (!placed) {
             	// First launch, screen appears in the corner
@@ -163,6 +175,7 @@ public class VideoPlayerApp extends Application {
         launch(args);
     }
     
+    // Hook mouse events to the top navigation bar
     private void installWindowControls(VideoPlayerView view) {
         view.getTitleBar().setOnMousePressed(event -> {
         	// where inside the window we grabbed it
@@ -178,5 +191,78 @@ public class VideoPlayerApp extends Application {
         
         // Platform.exit() calls stop()
         view.getCloseButton().setOnAction(_ -> javafx.application.Platform.exit());
+    }
+    
+    // Hook mouse events to each screen edge for resizing
+    private void installResizeHandles(Scene scene) {
+        // Filters run before child handlers, so edges work even over the title bar and video.
+        scene.addEventFilter(MouseEvent.MOUSE_MOVED, e -> {
+            if (stage.isMaximized()) { scene.setCursor(Cursor.DEFAULT); return; }
+            updateEdgeFlags(scene, e);
+            scene.setCursor(edgeCursor());
+        });
+
+        scene.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
+            if (stage.isMaximized()) { return; }
+            updateEdgeFlags(scene, e);
+            resizing = resizeLeft || resizeRight || resizeTop || resizeBottom;
+            if (resizing) {
+                startX = stage.getX();
+                startY = stage.getY();
+                startW = stage.getWidth();
+                startH = stage.getHeight();
+                startMouseX = e.getScreenX();
+                startMouseY = e.getScreenY();
+                // don't let the title bar start a window drag
+                e.consume();
+            }
+        });
+
+        scene.addEventFilter(MouseEvent.MOUSE_DRAGGED, e -> {
+            if (!resizing) { return; }
+            double dx = e.getScreenX() - startMouseX;
+            double dy = e.getScreenY() - startMouseY;
+
+            if (resizeRight) {
+                stage.setWidth(Math.max(MIN_WIDTH, startW + dx));
+            } else if (resizeLeft) {
+                double w = Math.max(MIN_WIDTH, startW - dx);
+                stage.setWidth(w);
+                // keep right edge fixed
+                stage.setX(startX + startW - w);
+            }
+            if (resizeBottom) {
+                stage.setHeight(Math.max(MIN_HEIGHT, startH + dy));
+            } else if (resizeTop) {
+                double h = Math.max(MIN_HEIGHT, startH - dy);
+                stage.setHeight(h);
+                // keep bottom edge fixed
+                stage.setY(startY + startH - h);
+            }
+            wasResized = true;
+            e.consume();
+        });
+
+        scene.addEventFilter(MouseEvent.MOUSE_RELEASED, e -> resizing = false);
+    }
+    
+    
+    private void updateEdgeFlags(Scene scene, MouseEvent e) {
+        resizeLeft = e.getSceneX() < RESIZE_MARGIN;
+        resizeRight = e.getSceneX() > scene.getWidth() - RESIZE_MARGIN;
+        resizeTop = e.getSceneY() < RESIZE_MARGIN;
+        resizeBottom = e.getSceneY() > scene.getHeight() - RESIZE_MARGIN;
+    }
+    
+    private Cursor edgeCursor() {
+        if (resizeTop && resizeLeft) return Cursor.NW_RESIZE;
+        if (resizeTop && resizeRight) return Cursor.NE_RESIZE;
+        if (resizeBottom && resizeLeft) return Cursor.SW_RESIZE;
+        if (resizeBottom && resizeRight) return Cursor.SE_RESIZE;
+        if (resizeLeft) return Cursor.W_RESIZE;
+        if (resizeRight) return Cursor.E_RESIZE;
+        if (resizeTop) return Cursor.N_RESIZE;
+        if (resizeBottom) return Cursor.S_RESIZE;
+        return Cursor.DEFAULT;
     }
 }
