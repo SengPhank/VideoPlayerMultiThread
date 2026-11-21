@@ -8,15 +8,30 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.Frame;
 
-/** Extracts just the audio track from a media file as compressed MP3 bytes. */
+/*
+ * Extracts time-bounded audio chunk from a media file as compressed MP3 bytes. 
+ * 
+*/
 public class AudioExtractor {
 
-    public static byte[] extractMp3(File videoFile) throws Exception {
-        File tempMp3 = File.createTempFile("subtitles-", ".mp3");
+    public static byte[] extractMp3Chunk(File videoFile, long startUs, long durationUs) throws Exception {
+        File tempMp3 = File.createTempFile("subtitles-chunk-", ".mp3");
+        long endUs = startUs + durationUs;
+        boolean recordedAny = false;
+
         try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(videoFile)) {
             grabber.start();
             if (!grabber.hasAudio()) {
                 return new byte[0];
+            }
+
+            long totalUs = grabber.getLengthInTime();
+            if (totalUs > 0 && startUs >= totalUs) {
+                return new byte[0];
+            }
+
+            if (startUs > 0) {
+                grabber.setTimestamp(startUs);
             }
 
             try (FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(tempMp3, grabber.getAudioChannels())) {
@@ -28,12 +43,21 @@ public class AudioExtractor {
 
                 Frame frame;
                 while ((frame = grabber.grabSamples()) != null) {
+                    long ts = grabber.getTimestamp();
+                    if (ts < startUs) {
+                        continue; // skip samples before the chunk window (keyframe seek landing)
+                    }
+                    if (ts >= endUs) {
+                        break;
+                    }
                     recorder.record(frame);
+                    recordedAny = true;
                 }
                 recorder.stop();
             }
             grabber.stop();
-            return Files.readAllBytes(tempMp3.toPath());
+
+            return recordedAny ? Files.readAllBytes(tempMp3.toPath()) : new byte[0];
         } finally {
             Files.deleteIfExists(tempMp3.toPath());
         }

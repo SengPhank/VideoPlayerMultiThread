@@ -51,7 +51,7 @@ public class VideoPlayerModel {
     private final Consumer<Boolean> audioOutputStateChangedHandler;
     private final Consumer<Boolean> subtitleStateChangedHandler;
     private final ToggleableProcessor subtitleProcessor;
-
+    
     private FramePipeline pipeline;
     private boolean needFrameWhilePaused;
     
@@ -59,7 +59,11 @@ public class VideoPlayerModel {
     private volatile CueBank cueBank;
     private Cue lastCue;
     private SubtitleRenderer.Strip strip;
-
+    
+    // Audio and subtitle chunking (for now, its 20s)
+    private static final long CHUNK_DURATION_US = 20_000_000L;
+    private Thread subtitleLoaderThread;
+    
     public void setCueBank(CueBank cueBank) {
         this.cueBank = cueBank;
     }
@@ -488,30 +492,45 @@ public class VideoPlayerModel {
         return fileName.substring(0, extensionStart);
     }
     
-    /* Now fetches the subtitles for the specific time frame.
+    /* Fetches the subtitles chunk for the specific time frame.
      * Uses a background thread to fetch cues, so video player doesnt lag
+     * 
      */
     private void loadSubtitles() {
         if (!(subtitleProcessor.getProcessor() instanceof FrameSubtitle subtitles)) {
             return;
         }
-        File targetFile = videoFile;
-        subtitles.setCueBank(null);
+        if (subtitleLoaderThread != null) {
+            subtitleLoaderThread.interrupt();
+        }
 
-        Thread loader = new Thread(() -> {
-            try {
-                byte[] mp3 = AudioExtractor.extractMp3(targetFile);
-                if (mp3.length == 0) {
-                    return;
+        File targetFile = videoFile;
+        String videoName = targetFile.getName();
+        CueBank bank = new CueBank();
+        subtitles.setCueBank(bank);
+
+        subtitleLoaderThread = new Thread(() -> {
+            SubtitleClient client = new SubtitleClient();
+            long offsetUs = 0;
+
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    byte[] mp3Chunk = AudioExtractor.extractMp3Chunk(targetFile, offsetUs, CHUNK_DURATION_US);
+                    if (mp3Chunk.length == 0) {
+                        break; // reached end of audio
+                    }
+
+                    List<Cue> cues = client.fetchCues(mp3Chunk, videoName, offsetUs);
+                    bank.addAll(cues);
+                    offsetUs += CHUNK_DURATION_US;
+                } catch (Exception e) {
+                    System.err.println("Subtitle chunk failed at " + offsetUs + "us: " + e.getMessage());
+                    break;
                 }
-                CueBank bank = new SubtitleClient().fetchCues(mp3, "audio.mp3");
-                subtitles.setCueBank(bank);
-            } catch (Exception e) {
-                System.err.println("Subtitle fetch failed: " + e.getMessage());
             }
         }, "subtitle-loader");
-        loader.setDaemon(true);
-        loader.start();
+        subtitleLoaderThread.setDaemon(true);
+        subtitleLoaderThread.start();
     }
 
     private long clampSeekTimestamp(long timestampUs) {
