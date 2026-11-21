@@ -26,8 +26,8 @@ public class CueBuilder {
     private static final int MAX_LINES_PER_CUE = 2;
     private static final long MIN_DURATION_US = 1_000_000L; // 1s
     private static final long MAX_DURATION_US = 7_000_000L; // 7s
-
-    public List<Cue> build(WhisperResponse response) {
+    
+    public List<Cue> build(WhisperResponse response, long offsetUs) {
         if (response == null || response.segments().isEmpty()) {
             return List.of();
         }
@@ -44,8 +44,8 @@ public class CueBuilder {
                 continue;
             }
 
-            long segStartUs = Math.round(seg.start() * 1_000_000.0);
-            long segEndUs = Math.round(seg.end() * 1_000_000.0);
+            long segStartUs = Math.round(seg.start() * 1_000_000.0) + offsetUs;
+            long segEndUs = Math.round(seg.end() * 1_000_000.0) + offsetUs;
             if (segEndUs <= segStartUs) {
                 continue;
             }
