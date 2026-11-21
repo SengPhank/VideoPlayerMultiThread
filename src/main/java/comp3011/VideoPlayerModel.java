@@ -488,10 +488,30 @@ public class VideoPlayerModel {
         return fileName.substring(0, extensionStart);
     }
     
+    /* Now fetches the subtitles for the specific time frame.
+     * Uses a background thread to fetch cues, so video player doesnt lag
+     */
     private void loadSubtitles() {
-        if (subtitleProcessor.getProcessor() instanceof FrameSubtitle subtitles) {
-            subtitles.setCueBank(CueBank.testBank());
+        if (!(subtitleProcessor.getProcessor() instanceof FrameSubtitle subtitles)) {
+            return;
         }
+        File targetFile = videoFile;
+        subtitles.setCueBank(null);
+
+        Thread loader = new Thread(() -> {
+            try {
+                byte[] mp3 = AudioExtractor.extractMp3(targetFile);
+                if (mp3.length == 0) {
+                    return;
+                }
+                CueBank bank = new SubtitleClient().fetchCues(mp3, "audio.mp3");
+                subtitles.setCueBank(bank);
+            } catch (Exception e) {
+                System.err.println("Subtitle fetch failed: " + e.getMessage());
+            }
+        }, "subtitle-loader");
+        loader.setDaemon(true);
+        loader.start();
     }
 
     private long clampSeekTimestamp(long timestampUs) {
