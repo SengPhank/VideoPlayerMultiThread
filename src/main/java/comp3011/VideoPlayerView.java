@@ -455,6 +455,10 @@ public class VideoPlayerView {
         return String.format("%02d:%02d", minutes, seconds);
     }
     
+    public void updateVideoTitle(String title) {
+    	((Label) titleBar.getChildren().get(0)).setText(title);
+    }
+    
     public Node getTitleBar() { return titleBar; }
     public Button getMinimiseButton() { return minimiseButton; }
     public Button getCloseButton() { return closeButton; }

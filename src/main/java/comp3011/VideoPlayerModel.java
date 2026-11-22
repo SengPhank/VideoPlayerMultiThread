@@ -51,6 +51,7 @@ public class VideoPlayerModel {
     private final Consumer<Boolean> audioOutputStateChangedHandler;
     private final Consumer<Boolean> subtitleStateChangedHandler;
     private final BiConsumer<Long, Long> timeChangedHandler;
+    private final Consumer<File> videoFileChangedHandler;
     private final ToggleableProcessor subtitleProcessor;
     
     private FramePipeline pipeline;
@@ -119,6 +120,7 @@ public class VideoPlayerModel {
             Consumer<Boolean> audioOutputStateChangedHandler,
             Consumer<Boolean> subtitleStateChangedHandler,
             BiConsumer<Long, Long> timeChangedHandler,
+            Consumer<File> videoFileChanged,
             ToggleableProcessor subtitleProcessor) {
         audioOutputEnabled = audioEnabled;
         this.videoSizeChangedHandler = videoSizeChangedHandler;
@@ -130,6 +132,7 @@ public class VideoPlayerModel {
         this.frameProcessors = List.copyOf(frameProcessors);
         this.subtitleProcessor = subtitleProcessor;
         this.timeChangedHandler = timeChangedHandler;
+        this.videoFileChangedHandler = videoFileChanged;
     }
 
     public void play(File file) {
@@ -205,6 +208,7 @@ public class VideoPlayerModel {
         notifyFrameReady(null);
         notifyPlaybackStateChanged();
         notifyTimeChanged();
+        notifyFileChanged();
     }
     
     public void toggleSubtitles() {
@@ -273,7 +277,8 @@ public class VideoPlayerModel {
                 : startTimestampUs;
         relativeSeekBaseUs = initialRelativeSeekBaseUs;
 
-        notifyStatusChanged(videoFile.getName());
+        notifyStatusChanged("Playing");
+        notifyFileChanged();
         
         if (videoFile == null || !videoFile.exists()) {
             handlePlaybackError(new Exception("Could not find video file"));
@@ -466,6 +471,7 @@ public class VideoPlayerModel {
         relativeSeekBaseUs = endTimestampUs;
         notifyStatusChanged("Playback finished");
         notifyPlaybackStateChanged();
+        notifyFileChanged();
     }
 
     private void handlePlaybackError(Exception e) {
@@ -475,6 +481,7 @@ public class VideoPlayerModel {
         pauseRequested = false;
         notifyStatusChanged("Error: " + e.getMessage());
         notifyPlaybackStateChanged();
+        notifyFileChanged();
     }
 
     private void closePlaybackResources() {
@@ -675,5 +682,8 @@ public class VideoPlayerModel {
     private void notifyTimeChanged() {
         timeChangedHandler.accept(currentTimestampUs, Math.max(0, videoDurationUs));
     }
-    
+    // Update the video file for lower levels
+    private void notifyFileChanged() {
+    	videoFileChangedHandler.accept(videoFile);
+    }
 }

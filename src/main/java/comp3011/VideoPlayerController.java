@@ -49,6 +49,7 @@ public class VideoPlayerController {
                 this::onAudioOutputStateChanged,
                 this::onSubtitleStateChanged,
                 this::onTimeChanged,
+                this::onVideoFileChanged,
                 subtitleProcessor);
 
         view.getStartOverButton().setOnAction(_ -> startOver());
@@ -164,6 +165,11 @@ public class VideoPlayerController {
     
     private void onTimeChanged(long currentUs, long durationUs) {
         view.setTime(currentUs, durationUs);
+    }
+    
+    private void onVideoFileChanged(File f) {
+    	String title = f.exists() ? f.getName() : "No file found";
+    	view.updateVideoTitle(title);
     }
 
     private void jumpToTypedTime() {
