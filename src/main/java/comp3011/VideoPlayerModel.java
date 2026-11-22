@@ -561,8 +561,8 @@ public class VideoPlayerModel {
                     loadedChunks.add(offsetUs);
                     offsetUs += CHUNK_DURATION_US;
                 } catch (Exception e) {
-                    System.err.println("Subtitle chunk failed at " + offsetUs + "us: " + e.getMessage());
                     System.err.println("Subtitle chunk failed at " + offsetUs + "us (retrying): " + e.getMessage());
+                    if (!sleepQuietly(RETRY_DELAY_MS)) break;
                 }
             }
         }, "subtitle-loader");
