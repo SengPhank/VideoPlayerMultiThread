@@ -62,8 +62,8 @@ public class VideoPlayerModel {
     private Cue lastCue;
     private SubtitleRenderer.Strip strip;
     
-    // Audio and subtitle chunking (for now, its 20s)
-    private static final long CHUNK_DURATION_US = 20_000_000L;
+    // Audio and subtitle chunking (for now, its 25s)
+    private static final long CHUNK_DURATION_US = 25_000_000L;
     private Thread subtitleLoaderThread;
     private static final long RETRY_DELAY_MS = 2_000L;
     private volatile long priorityChunkUs = NO_SEEK_REQUEST;

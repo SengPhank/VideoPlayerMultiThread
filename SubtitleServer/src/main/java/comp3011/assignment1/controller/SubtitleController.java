@@ -51,7 +51,6 @@ public class SubtitleController {
         String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "audio.mp3";
         WhisperResponse response = transcriptionService.transcribe(file.getBytes(), filename);
         List<Cue> cues = cueBuilder.build(response, offsetUs);
-
         cache.put(cacheKey, cues);
         return cues;
     }

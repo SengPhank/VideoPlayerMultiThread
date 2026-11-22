@@ -91,6 +91,18 @@ public class VideoPlayerController {
             	event.consume();
             }
         });
+        
+        // Unfocus time field if you click out of it
+        scene.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, event -> {
+            if (view.getTimeField().isFocused()) {
+                boolean clickedInsideField = view.getTimeField()
+                        .localToScene(view.getTimeField().getBoundsInLocal())
+                        .contains(event.getSceneX(), event.getSceneY());
+                if (!clickedInsideField) {
+                    view.getRoot().requestFocus();
+                }
+            }
+        });
     }
 
     public VideoPlayerView getView() {
