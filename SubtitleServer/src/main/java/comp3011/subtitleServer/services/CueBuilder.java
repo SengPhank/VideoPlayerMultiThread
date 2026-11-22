@@ -8,11 +8,8 @@ import org.springframework.stereotype.Service;
 import comp3011.subtitleServer.responses.Cue;
 import comp3011.subtitleServer.responses.WhisperResponse;
 
-/* Subtitle cue software requirements 
- * 
-	The subtitle text should be legible regardless of the frame background.
-	Subtitle text should be rendered using a san serif white font with a black outline.
-	Subtitle text should be legible regardless of the frame background and disrupt the playing video scene as little as possible.
+/* Subtitle cue software requirements:
+ 
 	Subtitle text should not exceed 42 characters per line.
 	Subtitle text should not exceed two lines. Prefer one line when possible.
 	Subtitle text for an entire phrase or sentence should appear on screen at the moment it is spoken, remaining there for no less than 1 second and no more than 7 seconds
@@ -20,6 +17,31 @@ import comp3011.subtitleServer.responses.WhisperResponse;
 	Line breaks, if required, should occur after punctuation where possible.
 */
 
+/*
+ * Cue Builder takes in the whisper's json response, then
+ * converts them to Cues. Each cue must respect the software
+ * requirements above (<=42 chars/line, <=2 lines, 1s-7s duration).
+ * If not possible, then the cue builder splits them up.
+*/
+
+/*
+ * How timings and voices are handled:
+ * 1. Filtering: Ignores non-speech/low-confidence segments (noSpeechProb > 0.6 && avgLogProb < -1.0).
+ * 
+ * 2. Timeline shifting: Converts Whisper's chunk-relative seconds to microseconds and adds offsetUs 
+ * so cues line up with the full video timeline.
+ * 
+ * 3. Splitting: Long segments are wrapped into <=42-char lines, and grouped into 2-line cues. 
+ * Then they're given proportional slices of the segment's duration.
+ * 
+ * 4. Clamping: Ensures every cue stays on screen between 1s and 7s without overlapping the next cue.
+ */
+
+// Full pipeline of the cue builder can be found under the planning document
+
+/*
+ * AI Acknowledgement: Generative AI was used to help develop 
+ */
 @Service
 public class CueBuilder {
     private static final int MAX_CHARS_PER_LINE = 42;
@@ -27,6 +49,10 @@ public class CueBuilder {
     private static final long MIN_DURATION_US = 1_000_000L; // 1s
     private static final long MAX_DURATION_US = 7_000_000L; // 7s
     
+    /* Building cues
+     * Ignores low confidence speech segments, and cleans input
+     * Calls Wraps All lines to ensure each lines fit within 42 char
+     */
     public List<Cue> build(WhisperResponse response, long offsetUs) {
         if (response == null || response.segments().isEmpty()) {
             return List.of();
@@ -61,7 +87,7 @@ public class CueBuilder {
     private List<String> wrapAllLines(String text) {
         List<String> lines = new ArrayList<>();
         String[] words = text.split("\\s+");
-        StringBuilder current = new StringBuilder();
+        StringBuilder current = new StringBuilder();   
 
         for (String word : words) {
             if (current.isEmpty()) {
@@ -85,7 +111,8 @@ public class CueBuilder {
         }
         return lines;
     }
-
+    
+    // Does the word end in a punctuation?
     private boolean endsWithBreakPunctuation(String s) {
         if (s.isEmpty()) return false;
         char last = s.charAt(s.length() - 1);

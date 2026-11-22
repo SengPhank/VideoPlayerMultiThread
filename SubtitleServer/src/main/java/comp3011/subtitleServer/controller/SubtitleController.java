@@ -16,7 +16,8 @@ import comp3011.subtitleServer.services.CueBuilder;
 import comp3011.subtitleServer.services.TranscriptionService;
 
 /*
- * Subtitle controller is the main endpoint for getting subtitles. 
+ * Subtitle controller is the main endpoint for receiving 
+ * audio bytes from client and chunk, and returning subtitles. 
  * Since it has first contact with the client for subtitles,
  * It will also store the subtitle and the timestamp.
  */
@@ -39,7 +40,11 @@ public class SubtitleController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "videoName", defaultValue = "unknown") String videoName,
             @RequestParam(value = "offsetUs", defaultValue = "0") long offsetUs) throws IOException {
-
+    	
+    	/*
+    	 * Key: videofilename.mp4:25000000
+    	 * Value: All cue for that chunk
+    	 */
         String cacheKey = videoName + ":" + offsetUs;
         List<Cue> cached = cache.get(cacheKey);
         if (cached != null) {

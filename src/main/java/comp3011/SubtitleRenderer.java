@@ -7,7 +7,11 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
-
+/* Subtitle User requirements
+ * 	The subtitle text should be legible regardless of the frame background.
+	Subtitle text should be rendered using a san serif white font with a black outline.
+	Subtitle text should be legible regardless of the frame background and disrupt the playing video scene as little as possible.
+ */
 /** Draws one cue's text into pixels. It knows nothing about frames: FrameSubtitle copies the result onto them. */
 public final class SubtitleRenderer {
 	// the text lives in the bottom 35% of the video

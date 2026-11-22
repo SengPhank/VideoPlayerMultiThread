@@ -13,6 +13,11 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.Instant;
 
+/*
+ * Admin Controller: Handles endpoints for:
+ * Shutting down server
+ * Getting uptime
+ */
 @RestController
 public class AdminController {
 		

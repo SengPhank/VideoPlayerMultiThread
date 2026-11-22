@@ -6,6 +6,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import comp3011.subtitleServer.services.UsageService;
 
+/*
+ * GlobalController handles one endpoint:
+ * Usage checking, to see how much audio seconds were transcribed
+ */
 @RestController
 public class GlobalController {
     private final UsageService usageService;
