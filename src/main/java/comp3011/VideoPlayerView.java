@@ -19,6 +19,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -49,6 +50,8 @@ public class VideoPlayerView {
 
     private final ImageView imageView = new ImageView();
     private final Label statusLabel = new Label("No video loaded");
+    private final TextField timeField = new TextField("00:00");
+    private final Label durationLabel = new Label("/ 00:00");
     private final Label tooltipLabel = new Label();
     private final Pane tooltipLayer = new Pane();
     private final StackPane videoPane;
@@ -84,6 +87,12 @@ public class VideoPlayerView {
         subtitleButton = iconButton(createSubtitleIcon(false));
         setPlaybackControlsDisabled(true);
                 
+        timeField.setPrefColumnCount(5);
+        timeField.setFocusTraversable(false);
+        timeField.setStyle("-fx-background-color: #3c3c3c; -fx-text-fill: white; -fx-border-color: #555555;");
+        durationLabel.setStyle("-fx-text-fill: white;");
+        statusLabel.setStyle("-fx-text-fill: white;");
+
         HBox controls = new HBox(
                 10,
                 startOverButton,
@@ -93,9 +102,13 @@ public class VideoPlayerView {
                 stopButton,
                 audioButton,
                 subtitleButton,
+                timeField,
+                durationLabel,
                 statusLabel);
-        
+
+        controls.setAlignment(Pos.CENTER_LEFT);
         controls.setPadding(new Insets(10));
+        controls.setStyle("-fx-background-color: #2b2b2b;");
 
         BorderPane content = new BorderPane();
         
@@ -193,6 +206,7 @@ public class VideoPlayerView {
         stopButton.setDisable(disabled);
         audioButton.setDisable(disabled);
         subtitleButton.setDisable(disabled);
+        timeField.setDisable(disabled);
     }
 
     // There are a bunch of tooltip handling methods starting from here. We want to use tooltips so that people with
@@ -424,7 +438,25 @@ public class VideoPlayerView {
         return line;
     }
     
+    // Moving to current timestamp based on users time field
+    public void setTime(long currentUs, long durationUs) {
+        // Don't overwrite the box while the user is typing in it
+        if (!timeField.isFocused()) {
+            timeField.setText(formatTime(currentUs));
+        }
+        durationLabel.setText("/ " + formatTime(durationUs));
+    }
+    
+    // time stamp of video format helper
+    private String formatTime(long us) {
+        long totalSeconds = Math.max(0, us / 1_000_000L);
+        long minutes = totalSeconds / 60;
+        long seconds = totalSeconds % 60;
+        return String.format("%02d:%02d", minutes, seconds);
+    }
+    
     public Node getTitleBar() { return titleBar; }
     public Button getMinimiseButton() { return minimiseButton; }
     public Button getCloseButton() { return closeButton; }
+    public TextField getTimeField() { return timeField; }
 }

@@ -50,6 +50,7 @@ public class VideoPlayerModel {
     private final BiConsumer<Boolean, Boolean> playbackStateChangedHandler;
     private final Consumer<Boolean> audioOutputStateChangedHandler;
     private final Consumer<Boolean> subtitleStateChangedHandler;
+    private final BiConsumer<Long, Long> timeChangedHandler;
     private final ToggleableProcessor subtitleProcessor;
     
     private FramePipeline pipeline;
@@ -116,6 +117,7 @@ public class VideoPlayerModel {
             BiConsumer<Boolean, Boolean> playbackStateChangedHandler,
             Consumer<Boolean> audioOutputStateChangedHandler,
             Consumer<Boolean> subtitleStateChangedHandler,
+            BiConsumer<Long, Long> timeChangedHandler,
             ToggleableProcessor subtitleProcessor) {
         audioOutputEnabled = audioEnabled;
         this.videoSizeChangedHandler = videoSizeChangedHandler;
@@ -126,6 +128,7 @@ public class VideoPlayerModel {
         this.subtitleStateChangedHandler = subtitleStateChangedHandler;
         this.frameProcessors = List.copyOf(frameProcessors);
         this.subtitleProcessor = subtitleProcessor;
+        this.timeChangedHandler = timeChangedHandler;
     }
 
     public void play(File file) {
@@ -191,6 +194,7 @@ public class VideoPlayerModel {
         notifyStatusChanged("Stopped");
         notifyFrameReady(null);
         notifyPlaybackStateChanged();
+        notifyTimeChanged();
     }
     
     public void toggleSubtitles() {
@@ -216,8 +220,8 @@ public class VideoPlayerModel {
                 : currentTimestampUs;
         seekTo(baseTimestampUs + offsetUs);
     }
-
-    private void seekTo(long timestampUs) {
+    
+    public void seekTo(long timestampUs) {
     	if (videoFile == null || !videoFile.exists()) {
             handlePlaybackError(new Exception("Could not find video file"));
             return;
@@ -321,6 +325,8 @@ public class VideoPlayerModel {
         playbackStartNs = 0;
         pauseStartedNs = pauseRequested ? System.nanoTime() : 0;
         needFrameWhilePaused = true;
+        
+        notifyTimeChanged();
     }
 
     private void resumePlaybackClock(long now) {
@@ -404,6 +410,7 @@ public class VideoPlayerModel {
         
         needFrameWhilePaused = false;
         notifyFrameReady(frame.image());
+        notifyTimeChanged();
     }
 
     private void writeDueAudio(long now) {
@@ -451,7 +458,8 @@ public class VideoPlayerModel {
     }
 
     private void handlePlaybackError(Exception e) {
-        e.printStackTrace();
+        // e.printStackTrace();
+    	System.err.println("Playback error: " + e.getMessage());
         closePlaybackResources();
         pauseRequested = false;
         notifyStatusChanged("Error: " + e.getMessage());
@@ -651,6 +659,10 @@ public class VideoPlayerModel {
     private long logicalTimestampUs(PreparedFrame f) {
     	long timeUs = logicalPlaybackBaseUs + Math.max(0, f.mediaTimestampUs() - firstTimestampUs);
         return timeUs;
+    }
+    // Update the video time stamp when changing time stamps
+    private void notifyTimeChanged() {
+        timeChangedHandler.accept(currentTimestampUs, Math.max(0, videoDurationUs));
     }
     
 }

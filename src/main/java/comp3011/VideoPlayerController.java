@@ -48,6 +48,7 @@ public class VideoPlayerController {
                 this::onPlaybackStateChanged,
                 this::onAudioOutputStateChanged,
                 this::onSubtitleStateChanged,
+                this::onTimeChanged,
                 subtitleProcessor);
 
         view.getStartOverButton().setOnAction(_ -> startOver());
@@ -57,13 +58,16 @@ public class VideoPlayerController {
         view.getStopButton().setOnAction(_ -> stopAndExit());
         view.getAudioButton().setOnAction(_ -> toggleAudioOutput());
         view.getSubtitleButton().setOnAction(_ -> toggleSubtitles());
+        view.getTimeField().setOnAction(_ -> jumpToTypedTime());
         view.showAudioEnabled(model.isAudioOutputEnabled());
         view.showSubtitleEnabled(model.isSubtitlesEnabled());
     }
 
     public void installKeyboardShortcuts(Scene scene) {
         scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.getCode() == KeyCode.ESCAPE) {
+        	if (view.getTimeField().isFocused()) {
+                return;
+            } else if (event.getCode() == KeyCode.ESCAPE) {
                 stopAndExit();
                 event.consume();
             } else if (event.getCode() == KeyCode.SPACE) {
@@ -156,5 +160,27 @@ public class VideoPlayerController {
     
     private void onSubtitleStateChanged(boolean subtitlesEnabled) {
     	view.showSubtitleEnabled(subtitlesEnabled);
+    }
+    
+    private void onTimeChanged(long currentUs, long durationUs) {
+        view.setTime(currentUs, durationUs);
+    }
+
+    private void jumpToTypedTime() {
+        String text = view.getTimeField().getText().trim();
+        try {
+            long seconds;
+            if (text.contains(":")) {
+                String[] parts = text.split(":");
+                seconds = Long.parseLong(parts[0]) * 60 + Long.parseLong(parts[1]);
+            } else {
+                seconds = Long.parseLong(text);
+            }
+            model.seekTo(seconds * 1_000_000L);
+        } catch (NumberFormatException ignored) {
+            // Invalid input: next frame update will reset the box to the real time
+        }
+        // Return focus to the window so keyboard shortcuts work again
+        view.getRoot().requestFocus();
     }
 }
