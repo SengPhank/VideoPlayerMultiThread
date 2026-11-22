@@ -66,6 +66,7 @@ public class VideoPlayerModel {
     private Thread subtitleLoaderThread;
     private static final long RETRY_DELAY_MS = 2_000L;
     private volatile long priorityChunkUs = NO_SEEK_REQUEST;
+    private volatile boolean videoEnded = false;
     
     public void setCueBank(CueBank cueBank) {
         this.cueBank = cueBank;
@@ -158,7 +159,16 @@ public class VideoPlayerModel {
     public void togglePause() {
         if (!playbackOpen) {
             if (videoFile != null) {
-                startPlayback(displayableSeekTimestamp(currentTimestampUs), false, currentTimestampUs);
+            	// If video ends (or we pulled the usb), restart the video
+            	long start = displayableSeekTimestamp(currentTimestampUs);
+            	long currentStamp = currentTimestampUs;
+            	if (videoEnded) {
+            		start = 0;
+            		currentStamp = NO_SEEK_REQUEST;
+                	videoEnded = false;
+            	}
+            	
+                startPlayback(start, false, currentStamp);
             }
             return;
         }
@@ -225,12 +235,12 @@ public class VideoPlayerModel {
     	if (videoFile == null || !videoFile.exists()) {
             handlePlaybackError(new Exception("Could not find video file"));
             return;
-        }
-    	
+        }    	
         long logicalTimestampUs = clampSeekTimestamp(timestampUs);
         long grabTimestampUs = displayableSeekTimestamp(logicalTimestampUs);
         
         priorityChunkUs = (logicalTimestampUs / CHUNK_DURATION_US) * CHUNK_DURATION_US;
+        videoEnded = false;
         
         if (!playbackOpen) {
             startPlayback(grabTimestampUs, pauseRequested, logicalTimestampUs);
@@ -450,6 +460,7 @@ public class VideoPlayerModel {
                 : currentTimestampUs;
 
         closePlaybackResources();
+        videoEnded = true;
         pauseRequested = true;
         currentTimestampUs = endTimestampUs;
         relativeSeekBaseUs = endTimestampUs;
