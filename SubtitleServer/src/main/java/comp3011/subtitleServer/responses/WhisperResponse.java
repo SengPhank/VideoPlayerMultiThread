@@ -1,4 +1,4 @@
-package comp3011.assignment1.responses;
+package comp3011.subtitleServer.responses;
 
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

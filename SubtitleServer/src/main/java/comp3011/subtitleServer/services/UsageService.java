@@ -1,4 +1,4 @@
-package comp3011.assignment1.services;
+package comp3011.subtitleServer.services;
 
 import java.util.concurrent.atomic.DoubleAdder;
 import org.springframework.stereotype.Service;

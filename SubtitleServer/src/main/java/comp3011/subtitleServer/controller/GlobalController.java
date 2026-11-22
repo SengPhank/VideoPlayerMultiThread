@@ -1,9 +1,10 @@
-package comp3011.assignment1.controller;
+package comp3011.subtitleServer.controller;
 
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import comp3011.assignment1.services.UsageService;
+
+import comp3011.subtitleServer.services.UsageService;
 
 @RestController
 public class GlobalController {

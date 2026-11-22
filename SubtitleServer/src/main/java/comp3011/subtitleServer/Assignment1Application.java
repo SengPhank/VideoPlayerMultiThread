@@ -1,4 +1,4 @@
-package comp3011.assignment1;
+package comp3011.subtitleServer;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

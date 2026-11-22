@@ -12,7 +12,7 @@
 	<artifactId>VideoPlayerServer</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>VideoPlayerServer</name>
-	<description>assignment 1 for comp3011</description>
+	<description>Subtitle Server for Java video player</description>
 	<url/>
 	<licenses>
 		<license/>

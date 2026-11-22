@@ -1,12 +1,12 @@
-package comp3011.assignment1.services;
+package comp3011.subtitleServer.services;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import comp3011.assignment1.responses.Cue;
-import comp3011.assignment1.responses.WhisperResponse;
+import comp3011.subtitleServer.responses.Cue;
+import comp3011.subtitleServer.responses.WhisperResponse;
 
 /* Subtitle cue software requirements 
  * 

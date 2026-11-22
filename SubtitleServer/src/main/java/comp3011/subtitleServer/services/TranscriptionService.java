@@ -1,4 +1,4 @@
-package comp3011.assignment1.services;
+package comp3011.subtitleServer.services;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
@@ -12,7 +12,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
-import comp3011.assignment1.responses.WhisperResponse;
+import comp3011.subtitleServer.responses.WhisperResponse;
 
 /** The only class that talks to OpenAI, so it is the only place usage is counted. */
 @Service

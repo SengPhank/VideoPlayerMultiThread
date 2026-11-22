@@ -182,8 +182,10 @@ public class VideoPlayerModel {
         if (pauseRequested) {
             pauseStartedNs = System.nanoTime();
             flushAudioOutput();
+            notifyStatusChanged("Paused");
         } else {
             resumePlaybackClock(System.nanoTime());
+            notifyStatusChanged("Playing");
         }
 
         notifyPlaybackStateChanged();
