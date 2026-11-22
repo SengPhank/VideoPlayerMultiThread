@@ -32,6 +32,11 @@ import javafx.scene.input.MouseEvent;
  * display to fit the selected screen.
  * </p>
  */
+
+/*
+ * AI Attribution: AI Was used to help test and optimise
+ * window drag and resizing
+ */
 public class VideoPlayerApp extends Application {
     private static CommandLineController commandLineController;
 

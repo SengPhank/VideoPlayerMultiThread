@@ -2,7 +2,8 @@ package comp3011;
 
 import java.awt.Color;
 
-/** All the subtitle colours. Edit the values below to change them. */
+// Subtitle Colour class. 
+
 public final class SubtitleColours {
     public static final Color TEXT = Color.WHITE;
     public static final Color OUTLINE = Color.BLACK;

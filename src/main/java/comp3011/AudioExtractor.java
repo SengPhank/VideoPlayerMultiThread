@@ -11,7 +11,7 @@ import org.bytedeco.javacv.Frame;
 
 /*
  * Extracts time-bounded audio chunk from a media file as compressed MP3 bytes. 
- * 
+ * Uses FFmpegFrameGrabber to slice mp3 section.
 */
 public class AudioExtractor {
 	// Hide non-critical console logs
@@ -23,8 +23,8 @@ public class AudioExtractor {
         boolean recordedAny = false;
 
         try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(videoFile)) {
-            grabber.start();
-            if (!grabber.hasAudio()) {
+        	grabber.start();
+        	if (!grabber.hasAudio()) {
                 return new byte[0];
             }
 

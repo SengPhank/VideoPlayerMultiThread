@@ -14,7 +14,17 @@ import java.util.UUID;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/** Talks to the local SubtitleServer to fetch subtitle cues for an audio chunk. */
+
+/*
+ * HTTP client responsible for communicating with SubtitleServer.
+ * Grabs already extracted mp3 audio and uploads it to server via multipart/form-data
+ * parses response back into list of cues
+ */
+
+/* 
+ * AI Assistance was used to help build
+ * multipart/form-data HTTP request and JSON response deserialisation
+ */
 public class SubtitleClient {
     private static final String BASE_URL = "http://localhost:8080/api/v1/subtitles";
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -43,7 +53,8 @@ public class SubtitleClient {
 
         return MAPPER.readValue(response.body(), new TypeReference<List<Cue>>() {});
     }
-
+    
+    // Wraps the raw MP3 bytes in a multipart/form-data body so then Spring Boot can read it as a MultipartFile
     private byte[] buildMultipartBody(String boundary, byte[] fileBytes, String filename) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         String header = "--" + boundary + "\r\n"

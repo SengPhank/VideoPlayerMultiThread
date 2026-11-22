@@ -36,6 +36,11 @@ import javafx.scene.image.Image;
  * decoupled from the JavaFX view.
  * </p>
  */
+
+/*
+ * AI Attribution: AI Was used to help test and bug fix the following:
+ * background subtitle chunking, priority-based seeking, and USB/network retry logic.
+ */
 public class VideoPlayerModel {
     private static final long NO_SEEK_REQUEST = -1; // Sentinel value used when no seek position is active.
     private static final long FIVE_SECONDS_US = 5_000_000L;
@@ -57,21 +62,12 @@ public class VideoPlayerModel {
     private FramePipeline pipeline;
     private boolean needFrameWhilePaused;
     
-    // Cuebank for subtitle handling
-    private volatile CueBank cueBank;
-    private Cue lastCue;
-    private SubtitleRenderer.Strip strip;
-    
     // Audio and subtitle chunking (for now, its 25s)
     private static final long CHUNK_DURATION_US = 25_000_000L;
     private Thread subtitleLoaderThread;
     private static final long RETRY_DELAY_MS = 2_000L;
     private volatile long priorityChunkUs = NO_SEEK_REQUEST;
     private volatile boolean videoEnded = false;
-    
-    public void setCueBank(CueBank cueBank) {
-        this.cueBank = cueBank;
-    }
     
     // This is the critical wiring that allows the framework (JavaFX) to call
     // into our model logic every time it goes around its event loop. Every GUI
@@ -97,13 +93,11 @@ public class VideoPlayerModel {
     private boolean pauseRequested;
     private boolean audioOutputEnabled;
     private boolean audioAvailable;
-    private boolean subtitlesEnabled;
     private long currentTimestampUs;
     private long videoDurationUs = NO_SEEK_REQUEST;
     private int videoFrameDurationUs;
     private double frameRate;
     private int intFrameRate;
-    private int totalVideoFrames;
     private long firstTimestampUs = NO_SEEK_REQUEST;
     private long logicalPlaybackBaseUs;
     private long playbackStartNs;
@@ -379,11 +373,7 @@ public class VideoPlayerModel {
             displayPreparedFrame(now);
         }
 
-        // Task (3). We'll try and be nice to the GUI event loop here by queueing the prepareNextFrame call rather than
-        // hogging the thread and doing it here, hence the tricky callback and use of prepareNextFrameQueued. Feel free
-        // to replace this whole block with simple linear control flow logic
-        // such as: if (!pauseRequested && preparedFrame == null) prepareNextFrame();
-        // to compare.
+        // Task (3): Poll the next pre-buffered frame from FramePipeline when needed.
         if (preparedFrame == null && (!pauseRequested || needFrameWhilePaused)) {
             boolean ended = pipeline.isFinished();
             
@@ -536,7 +526,6 @@ public class VideoPlayerModel {
     
     /* Fetches the subtitles chunk for the specific time frame.
      * Uses a background thread to fetch cues, so video player doesnt lag
-     * 
      */
     private void loadSubtitles() {
         if (!(subtitleProcessor.getProcessor() instanceof FrameSubtitle subtitles)) {
@@ -581,7 +570,6 @@ public class VideoPlayerModel {
                     if (mp3Chunk.length == 0) {
                     	// Reached the end of the file; wait in case the user seeks back to an unloaded chunk
                         if (!sleepQuietly(500)) break;
-                        break; // reached end of audio
                     }
 
                     List<Cue> cues = client.fetchCues(mp3Chunk, videoName, offsetUs);
@@ -661,15 +649,6 @@ public class VideoPlayerModel {
         subtitleStateChangedHandler.accept(subtitleProcessor.isEnabled());
     }
 
-//    private record PreparedFrame(
-//            Image image,
-//            int frameNumber,
-//            long mediaTimestampUs,
-//            long logicalTimestampUs,
-//            long targetTimeNs,
-//            long preparedAtNs) {
-//    }
-    
     // return the exact time each frame should appear
     private long targetTimeNs(PreparedFrame f) {
     	long timeNs = playbackStartNs + Math.max(0, f.mediaTimestampUs() - firstTimestampUs) * 1_000L;

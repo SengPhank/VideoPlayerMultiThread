@@ -3,7 +3,14 @@ package comp3011;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/* 
+ * CueBank holds the local copy of the cues for its livespan
+ * Stores all recorded cues in the list
+ * If the cue already exists locally, we never have to reach the server
+ * Only one unique mp4 per instance, so we never have to clear it.
+ */
 public class CueBank {
+	// Uses a concurrent array list to make read more thread safe
     private final List<Cue> cueList = new CopyOnWriteArrayList<>();
 
     public CueBank() {}

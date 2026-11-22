@@ -4,9 +4,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bytedeco.javacv.Frame;
 
-/* Wrapper class that can be used for each of our frame processors, 
- * so then can be enabled/disabled in real-time.
- * Instead of having to restart the app player.
+/* 
+ * Wrapper extension class for all FrameProcessor to make all
+ * FrameProcessor become active/non-active during runtime.
+ * This allows for subtitles to be toggled during video playback
  */
 
 public class ToggleableProcessor extends FrameProcessor {

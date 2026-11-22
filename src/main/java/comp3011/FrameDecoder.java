@@ -12,6 +12,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 
+/* Frame Decoder role
+ * Builds InfoVideo(w, h, fps, etc), and initialises every frame processors
+ * For each frame, process the audio and pushes audio under `audioOut` for audioplayer
+ * Clones the frame and push it to the next pipeline to avoid race conditions
+ */
 final class FrameDecoder implements Runnable {
 	// Attributes === 
 	
@@ -43,7 +48,7 @@ final class FrameDecoder implements Runnable {
 	
 	// Methods === 
 		
-	// run the thread pipeline, creating the filtered frames (with audio) and sending it to the video player.
+	// decoding raw frames (and audio) and sending them down the pipeline
 	public void run() {
 		try {
 			while (running.get() == true) {

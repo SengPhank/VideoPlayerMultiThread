@@ -8,6 +8,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+/*
+ * FrameProcessing Stage takes decoded raw video frames and 
+ * burns the filters and subtitle in order across threads
+ * Then passes processed frame for the next pipeline to conert into image.
+ */
 final class FrameProcessingStage implements Runnable {
 	
 	// Attributes ===

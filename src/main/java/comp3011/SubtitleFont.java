@@ -2,7 +2,8 @@ package comp3011;
 
 import java.awt.Font;
 
-/** Everything about the subtitle font. Edit the values below to change how the text looks. */
+// Subtitle Fonts class
+
 public final class SubtitleFont {
 	// any installed font like "Arial", "Verdana", "Georgia"
     public static final String NAME = Font.SANS_SERIF;  

@@ -12,7 +12,20 @@ import java.util.List;
 	Subtitle text should be rendered using a san serif white font with a black outline.
 	Subtitle text should be legible regardless of the frame background and disrupt the playing video scene as little as possible.
  */
-/** Draws one cue's text into pixels. It knows nothing about frames: FrameSubtitle copies the result onto them. */
+
+/*
+ * Renders a single Cue into a transparent ARGB pixel strip covering the bottom
+ * Then it returns a Strip(argb[], top) that FrameSubtitle burns onto the video frame.
+ * 
+ * Meets visibility requriements by making text a mixture of black and white.
+ * Text is also easily modifiable through the SubtitleColours and SubtitleFont class
+ */
+
+/*
+ * AI assistance was used to help draw the following
+ * text and subtitles using Java shapes
+ */
+
 public final class SubtitleRenderer {
 	// the text lives in the bottom 35% of the video
     private static final double STRIP_START = 0.65;
@@ -27,6 +40,7 @@ public final class SubtitleRenderer {
 
     private SubtitleRenderer() {}
 
+    // Draw the subtitle render 
     public static Strip render(Cue cue, int videoW, int videoH) {
         int top = (int) (videoH * STRIP_START);
         BufferedImage img = new BufferedImage(videoW, videoH - top, BufferedImage.TYPE_INT_ARGB);

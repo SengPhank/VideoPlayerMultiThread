@@ -13,6 +13,18 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.JavaFXFrameConverter;
 
+/*
+ *  FramePipeline wires together and manages the multithreaded video pipeline:
+ *  FrameDecoder -> FrameProcessingStage -> FrameConversionStage -> VideoPlayerModel
+ *  Decoder extracts audio and raw video frames from the mp4.
+ *  Processing stages run the FrameProcessors (filters + subtitles) in order across threads.
+ *  Decoder extracts audio and frame and burns the filters in
+ *  Conversion turns the processed Frame into a JavaFX Image.
+ *  VideoPlayerModel then takes the image and display it to client
+ *  
+ *  more information can be found in their specific channels 
+ */
+
 public class FramePipeline {
 	// Attributes
 	
@@ -101,12 +113,12 @@ public class FramePipeline {
     }
 	
 	// Stops all (Decoder, processor, converter) threads
-	 public void stop() {
-        running.set(false);
+	public void stop() {
+		running.set(false);
  
         // Interrupt everything first so all blocked queue operations wake at once, then join.
         for (Thread thread : threads) {
-            thread.interrupt();
+        	thread.interrupt();
         }
         for (Thread thread : threads) {
             try {

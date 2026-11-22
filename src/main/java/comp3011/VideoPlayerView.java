@@ -4,7 +4,7 @@
  * 
  * Authors:
  *   1. Simon Ratcliffe, in collaboration with GPT-5.6 Terra
- *   2. <student name and student number insert here upon modification>
+ *   2. Sengphachanh Phank a1967663
  *
  * Copyright 2026 Simon Ratcliffe
  */
@@ -44,6 +44,11 @@ import javafx.scene.layout.Region;
  * {@link VideoPlayerController}, but contains no playback logic (which all lives
  * in the controller).
  * </p>
+ */
+
+/*
+ * AI Attribution: AI Was used to help test and bug fix the following:
+ * subtitle image drawing and top navigation bar structure.
  */
 public class VideoPlayerView {
     private static final int ICON_SIZE = 28;
@@ -438,7 +443,7 @@ public class VideoPlayerView {
         return line;
     }
     
-    // Moving to current timestamp based on users time field
+    // Updates the displayed timestamp and total duration from the model
     public void setTime(long currentUs, long durationUs) {
         // Don't overwrite the box while the user is typing in it
         if (!timeField.isFocused()) {

@@ -12,6 +12,11 @@ import org.bytedeco.javacv.JavaFXFrameConverter;
 
 import javafx.scene.image.Image;
 
+/*
+ * Pulls the full finished frames with the filters and subtitles applies.
+ * Converts the java frame into javafx image using javaFXFrameConverter
+ * Wrap the image in a prepared frame, and pushes it into readyFrame for it to be displayed.
+ */
 final class FrameConversionStage implements Runnable {
 	// Attributes ===
 	
@@ -81,7 +86,7 @@ final class FrameConversionStage implements Runnable {
 		}
 	}
 	
-	// Offer the raw decoded frame to downstream workers
+	// Offer the converted JavaFX frame to readyFrames
 	private void offerJob(PreparedFrame readyJob) throws InterruptedException {
 		while (running.get()) {
             if (readyFrames.offer(readyJob, 50, TimeUnit.MILLISECONDS)) { break; }
