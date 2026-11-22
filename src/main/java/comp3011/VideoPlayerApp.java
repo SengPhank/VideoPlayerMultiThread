@@ -39,7 +39,8 @@ import javafx.scene.input.MouseEvent;
  */
 public class VideoPlayerApp extends Application {
     private static CommandLineController commandLineController;
-
+    static final boolean USE_CUSTOM_TITLE_BAR = false; // Adds a top nav bar, making the window draggable
+    
     private VideoPlayerController controller;
     private Stage stage;
     private Rectangle2D selectedScreenBounds;
@@ -62,7 +63,9 @@ public class VideoPlayerApp extends Application {
     @Override
     public void start(Stage stage) {
         this.stage = stage;
-        stage.initStyle(javafx.stage.StageStyle.UNDECORATED);
+        if (USE_CUSTOM_TITLE_BAR) {
+            stage.initStyle(javafx.stage.StageStyle.UNDECORATED);
+        }
         
         controller = new VideoPlayerController(
                 commandLineController.isAudioRequested(),
@@ -79,7 +82,9 @@ public class VideoPlayerApp extends Application {
         stage.setMaximized(commandLineController.isMaximiseRequested());
         
         // Hook top bar with mouse click
-        installWindowControls(controller.getView());
+        if (USE_CUSTOM_TITLE_BAR) {
+            installWindowControls(controller.getView());
+        }
         
         stage.show();
 
@@ -87,7 +92,9 @@ public class VideoPlayerApp extends Application {
         stage.outputScaleYProperty().addListener((_, _, _) -> updateVideoSize());
         stage.setOnCloseRequest(_ -> controller.shutdown());
         
-        installResizeHandles(scene);
+        if (USE_CUSTOM_TITLE_BAR) {
+        	installResizeHandles(scene);
+        }
         playVideo();
     }
 

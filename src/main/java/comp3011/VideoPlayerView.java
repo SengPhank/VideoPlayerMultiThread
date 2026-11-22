@@ -132,7 +132,9 @@ public class VideoPlayerView {
         titleBar.setAlignment(Pos.CENTER_LEFT);
         titleBar.setPadding(new Insets(4, 8, 4, 12));
         titleBar.setStyle("-fx-background-color: #2b2b2b;");
-        content.setTop(titleBar);
+        if (VideoPlayerApp.USE_CUSTOM_TITLE_BAR) {
+        	content.setTop(titleBar);
+        }
         
         // Create bottom bar
         content.setCenter(videoPane);

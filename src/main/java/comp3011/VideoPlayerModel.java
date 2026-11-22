@@ -308,7 +308,6 @@ public class VideoPlayerModel {
         videoFrameDurationUs = frameRate > 0
                 ? (int) Math.round(1_000_000.0 / frameRate)
                 : 0;
-        totalVideoFrames = grabber.getLengthInVideoFrames();
 
         long durationUs = grabber.getLengthInTime();
         videoDurationUs = durationUs > 0
