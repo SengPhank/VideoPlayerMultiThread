@@ -63,6 +63,8 @@ public class VideoPlayerModel {
     // Audio and subtitle chunking (for now, its 20s)
     private static final long CHUNK_DURATION_US = 20_000_000L;
     private Thread subtitleLoaderThread;
+    private static final long RETRY_DELAY_MS = 2_000L;
+    private volatile long priorityChunkUs = NO_SEEK_REQUEST;
     
     public void setCueBank(CueBank cueBank) {
         this.cueBank = cueBank;
@@ -216,8 +218,15 @@ public class VideoPlayerModel {
     }
 
     private void seekTo(long timestampUs) {
+    	if (videoFile == null || !videoFile.exists()) {
+            handlePlaybackError(new Exception("Could not find video file"));
+            return;
+        }
+    	
         long logicalTimestampUs = clampSeekTimestamp(timestampUs);
         long grabTimestampUs = displayableSeekTimestamp(logicalTimestampUs);
+        
+        priorityChunkUs = (logicalTimestampUs / CHUNK_DURATION_US) * CHUNK_DURATION_US;
         
         if (!playbackOpen) {
             startPlayback(grabTimestampUs, pauseRequested, logicalTimestampUs);
@@ -251,7 +260,12 @@ public class VideoPlayerModel {
         relativeSeekBaseUs = initialRelativeSeekBaseUs;
 
         notifyStatusChanged(videoFile.getName());
-
+        
+        if (videoFile == null || !videoFile.exists()) {
+            handlePlaybackError(new Exception("Could not find video file"));
+            return;
+        }
+        
         try {
             openPlaybackResources(startTimestampUs);
             resetPlaybackClock(currentTimestampUs);
@@ -511,28 +525,61 @@ public class VideoPlayerModel {
 
         subtitleLoaderThread = new Thread(() -> {
             SubtitleClient client = new SubtitleClient();
+            java.util.Set<Long> loadedChunks = new java.util.HashSet<>();
             long offsetUs = 0;
 
             while (!Thread.currentThread().isInterrupted()) {
+            	// If the user seeks at a timestamp, jump straight to that chunk
+                long requested = priorityChunkUs;
+                if (requested != NO_SEEK_REQUEST) {
+                    priorityChunkUs = NO_SEEK_REQUEST;
+                    offsetUs = requested;
+                }
+                
+                // Skip chunks we already have
+                if (loadedChunks.contains(offsetUs)) {
+                    offsetUs += CHUNK_DURATION_US;
+                    continue;
+                }
+                
+                // If the USB was unplugged, wait until it comes back instead of killing
+                if (!targetFile.exists()) {
+                    if (!sleepQuietly(RETRY_DELAY_MS)) break;
+                    continue;
+                }
+                
                 try {
                     byte[] mp3Chunk = AudioExtractor.extractMp3Chunk(targetFile, offsetUs, CHUNK_DURATION_US);
                     if (mp3Chunk.length == 0) {
+                    	// Reached the end of the file; wait in case the user seeks back to an unloaded chunk
+                        if (!sleepQuietly(500)) break;
                         break; // reached end of audio
                     }
 
                     List<Cue> cues = client.fetchCues(mp3Chunk, videoName, offsetUs);
                     bank.addAll(cues);
+                    loadedChunks.add(offsetUs);
                     offsetUs += CHUNK_DURATION_US;
                 } catch (Exception e) {
                     System.err.println("Subtitle chunk failed at " + offsetUs + "us: " + e.getMessage());
-                    break;
+                    System.err.println("Subtitle chunk failed at " + offsetUs + "us (retrying): " + e.getMessage());
                 }
             }
         }, "subtitle-loader");
         subtitleLoaderThread.setDaemon(true);
         subtitleLoaderThread.start();
     }
-
+    
+    // Was able to sleep peacefully without killing?
+    private boolean sleepQuietly(long millis) {
+    	try {
+    		Thread.sleep(millis);
+    		return true;
+    	} catch (InterruptedException e) {
+    		Thread.currentThread().interrupt();
+    		return false;
+    	}
+    }
     private long clampSeekTimestamp(long timestampUs) {
         long clampedTimestampUs = Math.max(0, timestampUs);
         long durationUs = videoDurationUs;
